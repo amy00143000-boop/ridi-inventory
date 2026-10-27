@@ -91,6 +91,62 @@
     });
   }
 
+
+  /* ---- 物料清單預載：掃碼後直接由手機顯示，背景再向伺服器更新 ---- */
+  var CAT_TTL = 10 * 60000, cats = {}, catLoading = {}, catFail = {}, dbp = null;
+  function idb() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (res) {
+      try { var o = indexedDB.open('ridi', 1); o.onupgradeneeded = function () { o.result.createObjectStore('catalog'); }; o.onsuccess = function () { res(o.result); }; o.onerror = function () { res(null); }; } catch (e) { res(null); }
+    });
+    return dbp;
+  }
+  function idbGet(k) { return idb().then(function (d) { return d ? new Promise(function (res) { try { var q = d.transaction('catalog').objectStore('catalog').get(k); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; } catch (e) { res(null); } }) : null; }); }
+  function idbPut(k, v) { return idb().then(function (d) { if (!d) return; try { d.transaction('catalog', 'readwrite').objectStore('catalog').put(v, k); } catch (e) {} }); }
+  function idbClear() { return idb().then(function (d) { if (!d) return; try { d.transaction('catalog', 'readwrite').objectStore('catalog').clear(); } catch (e) {} }); }
+  function indexCat(c) { var m = {}, dup = {}; (c.items || []).forEach(function (it, i) { (it.keys || []).forEach(function (k) { if (k in m && m[k] !== i) dup[k] = 1; m[k] = i; }); }); Object.keys(dup).forEach(function (k) { delete m[k]; }); c.map = m; return c; }
+  function catKey(b) { return (tokenEmail() || '') + '|' + b; }
+  function loadCat(b, force) {
+    if (!/^RD[1-6]$/.test(b)) return;
+    var mem = cats[b];
+    if (!force && mem && Date.now() - mem.at < CAT_TTL) return;
+    if (catLoading[b] || (catFail[b] && Date.now() - catFail[b] < 5 * 60000)) return;
+    catLoading[b] = true;
+    (mem ? Promise.resolve(null) : idbGet(catKey(b))).then(function (saved) {
+      if (saved && saved.items && !cats[b]) cats[b] = indexCat(saved);
+      if (!force && cats[b] && Date.now() - cats[b].at < CAT_TTL) { catLoading[b] = false; return; }
+      return call('catalog', [b]).then(function (c) { if (c && c.items) { cats[b] = indexCat(c); idbPut(catKey(b), { branch: c.branch, week: c.week, at: c.at, items: c.items }); } });
+    }).catch(function () { catFail[b] = Date.now(); }).then(function () { catLoading[b] = false; });
+  }
+  function fromCat(b, raw) {
+    var c = cats[b]; if (!c || !c.map) return null;
+    var k = String(raw || '').trim().split('|')[0].trim().toUpperCase(); if (!k) return null;
+    var i = c.map[k]; if (i === undefined) return null;
+    var it = JSON.parse(JSON.stringify(c.items[i])); delete it.keys; return it;
+  }
+  function patchCat(b, res) {
+    var c = cats[b]; if (!c || !res || !res.code) return;
+    c.items.forEach(function (it) { if (it.code === res.code) { Object.keys(res).forEach(function (k) { it[k] = res[k]; }); } });
+  }
+  function fast(fn, args) {
+    var b = args[0];
+    if (typeof b === 'string' && /^RD[1-6]$/.test(b)) loadCat(b, fn === 'transact');
+    if ((fn === 'lookup' || fn === 'countLookup') && args.length >= 2) {
+      var hit = fromCat(b, args[1]);
+      if (hit) {
+        call(fn, args).then(function (r) { patchCat(b, r); }, function () {});
+        return Promise.resolve(hit);
+      }
+    }
+    var p = call(fn, args);
+    if (fn === 'transact') p.then(function () {
+      var q = args[0] || {}, code = q.code || q.id || q.item;
+      Object.keys(cats).forEach(function (x) { cats[x].at = 0; if (code) call('countLookup', [x, code]).then(function (r) { patchCat(x, r); }, function () {}); });
+    }, function () {});
+    if (fn === 'bootstrap') p.then(function (r) { var bs = (r && r.branches) || []; if (bs.length === 1) loadCat(typeof bs[0] === 'string' ? bs[0] : bs[0].code || bs[0].id); }, function () {});
+    return p;
+  }
+
   function runner(ok, fail) {
     return new Proxy({}, {
       get: function (_, k) {
@@ -99,7 +155,7 @@
         if (k === 'withUserObject') return function () { return runner(ok, fail); };
         return function () {
           var a = Array.prototype.slice.call(arguments);
-          call(String(k), a).then(function (r) { if (ok) ok(r); }, function (e) { if (fail) fail(e); else console.error(e); });
+          fast(String(k), a).then(function (r) { if (ok) ok(r); }, function (e) { if (fail) fail(e); else console.error(e); });
         };
       }
     });
@@ -116,6 +172,8 @@
       }
     }
   };
+  document.addEventListener('change', function (e) { if (e.target && e.target.id === 'branch' && e.target.value) loadCat(e.target.value); }, true);
+  setInterval(function () { var s = document.getElementById('branch'); if (s && s.value && valid()) loadCat(s.value); }, 60000);
   document.addEventListener('DOMContentLoaded', function () {
     var b = document.createElement('button'); b.type = 'button'; b.textContent = '切換帳號';
     b.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:9000;font-size:12px;padding:6px 10px;border-radius:14px;border:1px solid #c9d3d7;background:#fff;color:#33474f;opacity:.85';
@@ -123,7 +181,7 @@
     document.body.appendChild(b);
   });
   window.ridiSignOut = function () {
-    clear();
+    clear(); cats = {}; idbClear();
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
     location.reload();
   };

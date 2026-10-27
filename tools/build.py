@@ -11,6 +11,20 @@ def must(s, a, b, n=1):
     if c != n: raise SystemExit(f'預期 {n} 次，找到 {c} 次：{a[:60]}')
     return s.replace(a, b)
 
+OLD_TICK = "const tick=()=>{if(ticket!==generation)return;try{if(video.readyState>=2){const raw=decode(video,video.videoWidth,video.videoHeight);if(raw){found(raw);return;}}timer=setTimeout(tick,160);}catch(e){stop();onStatus(e.message);}};tick();"
+NEW_TICK = ("let n=0,det=null;try{if('BarcodeDetector' in window)det=new BarcodeDetector({formats:['qr_code']});}catch(_){det=null}"
+  "const tick=async()=>{if(ticket!==generation)return;try{if(video.readyState>=2){let raw=null;n++;"
+  "if(det){try{const c=await det.detect(video);raw=c&&c[0]&&c[0].rawValue}catch(_){det=null}}"
+  "if(!raw){const w=video.videoWidth,h=video.videoHeight;raw=n%4===0?decode(video,w,h,800):decodeFast(video,w,h);}"
+  "if(ticket!==generation)return;if(raw){found(raw);return;}}timer=setTimeout(tick,40);}catch(e){stop();onStatus(e.message);}};tick();")
+OLD_DEC = "function decode(source,w,h,max=960){"
+NEW_DEC = ("function decodeFast(v,w,h){const side=Math.round(Math.min(w,h)*0.8),sx=Math.round((w-side)/2),sy=Math.round((h-side)/2),size=Math.min(560,side);"
+  "canvas.width=size;canvas.height=size;ctx.drawImage(v,sx,sy,side,side,0,0,size,size);const p=ctx.getImageData(0,0,size,size);"
+  "return jsQR(p.data,size,size,{inversionAttempts:'dontInvert'})?.data;}\n    function decode(source,w,h,max=960){")
+def fastscan(x):
+    x = x.replace("getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false})", "getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})")
+    if x.count(OLD_TICK)!=1 or x.count(OLD_DEC)!=1: raise SystemExit('掃碼程式碼結構不符')
+    return x.replace(OLD_TICK,NEW_TICK).replace(OLD_DEC,NEW_DEC)
 p = (src/'PAGE.html').read_text()
 p = must(p, '<style>', HEAD + '<style>', p.count('<style>')) if False else p.replace('<style>', HEAD + '<style>', 1)
 p = re.sub(r"BASE='https://script\.google\.com/macros/s/[^']+/exec'", "BASE='./'", p)
@@ -18,9 +32,11 @@ ROUTER = "<script>if(/[?&]type=/.test(location.search))location.replace('ops.htm
 p = p.replace('<link rel="manifest"', ROUTER + '<link rel="manifest"', 1)
 p = p.replace("Google 頁面不支援即時相機；可用手機內建相機掃標籤，或下方拍照／選照片。拍照時讓二維碼清晰佔畫面一半以上。",
               "按「掃碼辨識下一項」開啟相機，對準二維碼即可自動辨識；相機無法開啟時可改用拍照。")
+p = fastscan(p)
 (out/'index.html').write_text(p)
 
 l = (src/'LEGACY.html').read_text()
+l = fastscan(l)
 l = l.replace('<style>', HEAD + '<style>', 1)
 # 同一網址：網址列顯示首頁；按「盤點」回首頁盤點畫面
 OPS_JS = ("<script>try{history.replaceState(null,'','./'+location.search+location.hash)}catch(e){}"
