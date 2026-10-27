@@ -13,13 +13,22 @@ def must(s, a, b, n=1):
 
 p = (src/'PAGE.html').read_text()
 p = must(p, '<style>', HEAD + '<style>', p.count('<style>')) if False else p.replace('<style>', HEAD + '<style>', 1)
-p = re.sub(r"BASE='https://script\.google\.com/macros/s/[^']+/exec'", "BASE='ops.html'", p)
+p = re.sub(r"BASE='https://script\.google\.com/macros/s/[^']+/exec'", "BASE='./'", p)
+ROUTER = "<script>if(/[?&]type=/.test(location.search))location.replace('ops.html'+location.search);</script>"
+p = p.replace('<link rel="manifest"', ROUTER + '<link rel="manifest"', 1)
 p = p.replace("Google 頁面不支援即時相機；可用手機內建相機掃標籤，或下方拍照／選照片。拍照時讓二維碼清晰佔畫面一半以上。",
               "按「掃碼辨識下一項」開啟相機，對準二維碼即可自動辨識；相機無法開啟時可改用拍照。")
 (out/'index.html').write_text(p)
 
 l = (src/'LEGACY.html').read_text()
 l = l.replace('<style>', HEAD + '<style>', 1)
+# 同一網址：網址列顯示首頁；按「盤點」回首頁盤點畫面
+OPS_JS = ("<script>try{history.replaceState(null,'','./'+location.search+location.hash)}catch(e){}"
+  "document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-action=\"盤點提報\"]');if(!b)return;"
+  "e.preventDefault();e.stopImmediatePropagation();var q=new URLSearchParams();var br=document.getElementById('branch'),em=document.getElementById('employee'),cd=document.getElementById('code');"
+  "if(br&&br.value)q.set('branch',br.value);if(em&&em.value)q.set('employee',em.value);if(cd&&cd.value.trim())q.set('id',cd.value.trim());"
+  "location.href='./'+(q.toString()?'?'+q:'')},true);</script>")
+l = l.replace('<link rel="manifest"', OPS_JS + '<link rel="manifest"', 1)
 l = must(l, "$('scan').onclick=()=>{say(tr('cameraGoogleHint'));$('message').scrollIntoView({block:'nearest'});};",
          "$('scan').onclick=async()=>{say(tr('cameraStart'));$('stop').hidden=false;$('video').hidden=false;$('video').scrollIntoView({block:'center'});try{await qrScanner.start()}catch(e){$('stop').hidden=true;say((e&&e.message)||tr('cameraGoogleHint'))}};")
 l = l.replace("Google 入口不提供即時相機。請用下方「拍照／選照片辨識」，或離開此頁用 iPhone 相機掃標籤再開啟連結。",
@@ -27,5 +36,6 @@ l = l.replace("Google 入口不提供即時相機。請用下方「拍照／選�
 l = l.replace("'Cổng Google không hỗ trợ camera trực tiếp. Chụp/chọn ảnh bên dưới hoặc quét nhãn bằng camera iPhone.'","'Không mở được camera. Hãy cho phép camera hoặc dùng chụp/chọn ảnh bên dưới.'")
 l = l.replace("此入口僅在 Apps Script 測試部署後可使用。現有正式庫存不受影響。", "請登入後選擇廠別與作業員工，再掃碼或輸入品號。")
 l = l.replace("cameraGoogleHint:[", "cameraStart:['相機啟動中，請將二維碼對準畫面。','Đang mở camera, hãy hướng mã QR vào khung hình.'],cameraGoogleHint:[", 1)
+l = l.replace('<title>日帝六廠｜測試掃碼入庫</title>', '<title>日帝汽車｜入庫調撥</title>')
 (out/'ops.html').write_text(l)
 print('ok', len(p), len(l))
