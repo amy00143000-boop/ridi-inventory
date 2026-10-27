@@ -5,7 +5,7 @@ HEAD = ('<link rel="manifest" href="manifest.webmanifest"><meta name="theme-colo
         '<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">'
         '<meta name="apple-mobile-web-app-capable" content="yes">'
         '<script src="https://accounts.google.com/gsi/client" async></script>'
-        '<script src="config.js"></script><script src="shim.js"></script>')
+        '<script src="config.js?v=' + __import__('time').strftime('%Y%m%d%H%M') + '"></script><script src="shim.js?v=' + __import__('time').strftime('%Y%m%d%H%M') + '"></script>')
 def must(s, a, b, n=1):
     c = s.count(a)
     if c != n: raise SystemExit(f'預期 {n} 次，找到 {c} 次：{a[:60]}')
