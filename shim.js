@@ -128,23 +128,57 @@
     var c = cats[b]; if (!c || !res || !res.code) return;
     c.items.forEach(function (it) { if (it.code === res.code) { Object.keys(res).forEach(function (k) { it[k] = res[k]; }); } });
   }
-  function fast(fn, args) {
-    var b = args[0];
-    if (typeof b === 'string' && /^RD[1-6]$/.test(b)) loadCat(b, fn === 'transact');
-    if ((fn === 'lookup' || fn === 'countLookup') && args.length >= 2) {
-      var hit = fromCat(b, args[1]);
-      if (hit) {
-        call(fn, args).then(function (r) { patchCat(b, r); }, function () {});
-        return Promise.resolve(hit);
+  function weekId() { var t = new Date(Date.now() + 8 * 3600000), d = (t.getUTCDay() + 6) % 7; return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() - d)).toISOString().slice(0, 10); }
+  function catReady(b) {
+    if (cats[b]) return Promise.resolve(cats[b]);
+    return idbGet(catKey(b)).then(function (saved) { if (saved && saved.items && !cats[b]) cats[b] = indexCat(saved); return cats[b] || null; }, function () { return null; });
+  }
+  function itemOut(c, it) { var o = JSON.parse(JSON.stringify(it)); delete o.keys; if (c.week !== weekId()) o.countState = { week: weekId(), latest: null }; return o; }
+  function weeklyFromCat(c) {
+    if (!c || c.week !== weekId()) return null;
+    var items = c.items.map(function (it) { var l = it.countState && it.countState.latest; return { code: it.code, sku: it.sku, name: it.name, area: it.location || '未設定儲位', unit: it.unit || '', done: !!l && !l.returned, latest: l || null }; });
+    return { week: c.week, total: items.length, done: items.filter(function (r) { return r.done; }).length, items: items };
+  }
+  function swrKey(fn, args) { return 'ridi_swr|' + (tokenEmail() || '') + '|' + fn + '|' + JSON.stringify(args); }
+  function swrGet(k) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function swrPut(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function employeeName(id) { var bt = swrGet(swrKey('bootstrap', [])); var e = bt && (bt.employees || []).filter(function (x) { return x.id === id; })[0]; return e ? e.name : (tokenEmail() || ''); }
+  function afterTransact(q, result) {
+    var b = q.branch, c = cats[b];
+    if (c && c.map) {
+      var i = c.map[String(q.code || '').trim().split('|')[0].trim().toUpperCase()], it = i === undefined ? null : c.items[i];
+      if (it && result) {
+        if (q.type === '盤點提報') { if (c.week !== weekId()) { c.items.forEach(function (x) { x.countState = { week: weekId(), latest: null }; }); c.week = weekId(); } it.countState = { week: weekId(), latest: { id: result.id, quantity: result.quantity, unit: it.unit, employee: employeeName(q.employeeId || q.employee), time: new Date().toISOString(), returned: false, approved: false } }; }
+        if (q.type === '入庫' && typeof it.balance === 'number') it.balance += Number(result.quantity) || 0;
+        if (q.type === '調撥出貨' && typeof it.balance === 'number') it.balance -= Number(result.quantity) || 0;
+        idbPut(catKey(b), { branch: c.branch, week: c.week, at: c.at, items: c.items });
       }
     }
-    var p = call(fn, args);
-    if (fn === 'transact') p.then(function () {
-      var q = args[0] || {}, code = q.code || q.id || q.item;
-      Object.keys(cats).forEach(function (x) { cats[x].at = 0; if (code) call('countLookup', [x, code]).then(function (r) { patchCat(x, r); }, function () {}); });
-    }, function () {});
-    if (fn === 'bootstrap') p.then(function (r) { var bs = (r && r.branches) || []; if (bs.length === 1) loadCat(typeof bs[0] === 'string' ? bs[0] : bs[0].code || bs[0].id); }, function () {});
-    return p;
+    Object.keys(cats).forEach(function (x) { cats[x].at = 0; });
+    setTimeout(function () { Object.keys(cats).forEach(function (x) { loadCat(x, true); }); }, 1500);
+  }
+  function fast(fn, args) {
+    var b = args[0];
+    if (typeof b === 'string' && /^RD[1-6]$/.test(b)) loadCat(b);
+    if ((fn === 'lookup' || fn === 'countLookup') && args.length >= 2) {
+      return catReady(b).then(function (c) {
+        var k = String(args[1] || '').trim().split('|')[0].trim().toUpperCase(), i = c && c.map ? c.map[k] : undefined;
+        if (i !== undefined) { call(fn, args).then(function (r) { patchCat(b, r); }, function () {}); return itemOut(c, c.items[i]); }
+        return call(fn, args);
+      });
+    }
+    if (fn === 'weeklyCounts' && /^RD[1-6]$/.test(b)) {
+      return catReady(b).then(function (c) { var w = weeklyFromCat(c); return w || call(fn, args); });
+    }
+    if (fn === 'bootstrap') {
+      var k = swrKey(fn, args), cached = swrGet(k);
+      var p = call(fn, args).then(function (r) { swrPut(k, r); var bs = (r && r.branches) || []; if (bs.length === 1) loadCat(bs[0]); return r; });
+      if (cached && tokenEmail()) { p.catch(function () {}); return Promise.resolve(cached); }
+      return p;
+    }
+    var p2 = call(fn, args);
+    if (fn === 'transact') p2.then(function (r) { afterTransact(args[0] || {}, r); }, function () {});
+    return p2;
   }
 
   function runner(ok, fail) {
