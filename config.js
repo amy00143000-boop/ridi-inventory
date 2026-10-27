@@ -1,5 +1,5 @@
 // 部署設定：完成 Google 登入金鑰與 Apps Script API 部署後填入
 window.RIDI_CONFIG = {
   API_URL: 'PASTE_APPS_SCRIPT_API_URL',      // Apps Script「API 專用」部署網址（…/exec）
-  CLIENT_ID: 'PASTE_GOOGLE_OAUTH_CLIENT_ID'  // Google Cloud OAuth 用戶端 ID（…apps.googleusercontent.com）
+  CLIENT_ID: '1578802597-j2fk34mcu5tl440on2qtd052tt3cgiid.apps.googleusercontent.com'  // Google Cloud OAuth 用戶端 ID（…apps.googleusercontent.com）
 };

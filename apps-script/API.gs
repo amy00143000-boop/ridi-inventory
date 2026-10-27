@@ -3,7 +3,7 @@
  *  並將 程式碼.gs 的 identity_ 第一行改為：
  *    const email=String(API_EMAIL_||Session.getActiveUser().getEmail()).toLowerCase();
  */
-const API_CLIENT_ID = 'PASTE_GOOGLE_OAUTH_CLIENT_ID';
+const API_CLIENT_ID = '1578802597-j2fk34mcu5tl440on2qtd052tt3cgiid.apps.googleusercontent.com';
 function apiFns_(){return {bootstrap:bootstrap,lookup:lookup,pendingTasks:pendingTasks,transact:transact,weeklyCounts:weeklyCounts,countLookup:countLookup,reviewList:reviewList,reviewBatch:reviewBatch};}
 var API_EMAIL_ = '';
 
