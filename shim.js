@@ -16,6 +16,9 @@
     } catch (e) { exp = Date.now() + 50 * 60000; }
     try { localStorage.setItem(KEY_T, token); localStorage.setItem(KEY_E, String(exp)); } catch (e) {}
   }
+  function tokenEmail() {
+    try { return JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))))).email || ''; } catch (e) { return ''; }
+  }
   function clear() { token = ''; exp = 0; try { localStorage.removeItem(KEY_T); localStorage.removeItem(KEY_E); } catch (e) {} }
 
   function css() {
@@ -81,6 +84,7 @@
     }).then(function (j) {
       if (j && j.ok) return j.result;
       var msg = (j && j.error) || '未知錯誤';
+      if (/尚未開通/.test(msg) && tokenEmail()) msg += '（目前登入：' + tokenEmail() + '，如帳號不對請按右上「切換帳號」）';
       if (j && j.auth && !retried) { clear(); return call(fn, args, true); }
       if (j && j.auth) { clear(); showOverlay(msg); }
       throw new Error(msg);
@@ -112,6 +116,12 @@
       }
     }
   };
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = '切換帳號';
+    b.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:9000;font-size:12px;padding:6px 10px;border-radius:14px;border:1px solid #c9d3d7;background:#fff;color:#33474f;opacity:.85';
+    b.onclick = function () { window.ridiSignOut(); };
+    document.body.appendChild(b);
+  });
   window.ridiSignOut = function () {
     clear();
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();

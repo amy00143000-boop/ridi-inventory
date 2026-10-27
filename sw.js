@@ -1,5 +1,5 @@
 // 只快取網頁外殼，資料一律即時向伺服器讀取
-const CACHE = 'ridi-shell-v3';
+const CACHE = 'ridi-shell-v4';
 const SHELL = ['./', './index.html', './ops.html', './shim.js', './config.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
