@@ -1,0 +1,4 @@
+/* ===== 登入工作階段：Google 驗證一次，7 天內免重新登入（每次仍檢查人員權限） ===== */
+function apiSecret_(){const p=PropertiesService.getScriptProperties();let s=p.getProperty('API_SESSION_SECRET');if(!s){s=Utilities.getUuid()+Utilities.getUuid();p.setProperty('API_SESSION_SECRET',s);}return s;}
+function apiSign_(email){const exp=Date.now()+7*86400000,body=Utilities.base64EncodeWebSafe(email+'|'+exp),sig=Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(body,apiSecret_()));return 'S.'+body+'.'+sig;}
+function apiSession_(t){const p=t.split('.');if(p.length!==3)throw Error('請重新登入');const sig=Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(p[1],apiSecret_()));if(sig!==p[2])throw Error('請重新登入');const v=Utilities.newBlob(Utilities.base64DecodeWebSafe(p[1])).getDataAsString().split('|'),exp=Number(v[1]);if(!(exp>Date.now()))throw Error('登入已過期，請重新登入');return {email:String(v[0]).toLowerCase(),exp};}

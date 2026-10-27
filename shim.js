@@ -3,11 +3,16 @@
 (function () {
   'use strict';
   var CFG = window.RIDI_CONFIG || {};
-  var KEY_T = 'ridi_id_token', KEY_E = 'ridi_id_exp';
-  var token = '', exp = 0, waiters = [], overlay = null, gisReady = false;
-  try { token = localStorage.getItem(KEY_T) || ''; exp = Number(localStorage.getItem(KEY_E)) || 0; } catch (e) {}
+  var KEY_T = 'ridi_id_token', KEY_E = 'ridi_id_exp', KEY_S = 'ridi_session';
+  var token = '', exp = 0, sess = '', waiters = [], overlay = null, gisReady = false;
+  try { token = localStorage.getItem(KEY_T) || ''; exp = Number(localStorage.getItem(KEY_E)) || 0; sess = localStorage.getItem(KEY_S) || ''; } catch (e) {}
+  function b64u(x) { return decodeURIComponent(escape(atob(x.replace(/-/g, '+').replace(/_/g, '/')))); }
+  function sessInfo() { try { var v = b64u(sess.split('.')[1]).split('|'); return { email: v[0], exp: Number(v[1]) }; } catch (e) { return null; } }
+  function sessValid() { var i = sess && sessInfo(); return !!(i && i.exp > Date.now() + 60000); }
+  function saveSess(s) { if (!s) return; sess = s; try { localStorage.setItem(KEY_S, s); } catch (e) {} }
 
-  function valid() { return token && Date.now() < exp - 60000; }
+  function valid() { return sessValid() || (token && Date.now() < exp - 60000); }
+  function authToken() { return sessValid() ? sess : token; }
   function save(t) {
     token = t || '';
     try {
@@ -17,9 +22,10 @@
     try { localStorage.setItem(KEY_T, token); localStorage.setItem(KEY_E, String(exp)); } catch (e) {}
   }
   function tokenEmail() {
-    try { return JSON.parse(decodeURIComponent(escape(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))))).email || ''; } catch (e) { return ''; }
+    if (sessValid()) return sessInfo().email || '';
+    try { return JSON.parse(b64u(token.split('.')[1])).email || ''; } catch (e) { return ''; }
   }
-  function clear() { token = ''; exp = 0; try { localStorage.removeItem(KEY_T); localStorage.removeItem(KEY_E); } catch (e) {} }
+  function clear() { token = ''; exp = 0; sess = ''; try { localStorage.removeItem(KEY_T); localStorage.removeItem(KEY_E); localStorage.removeItem(KEY_S); } catch (e) {} }
 
   function css() {
     if (document.getElementById('ridiAuthCss')) return;
@@ -77,11 +83,12 @@
       return Promise.reject(new Error('系統尚未完成設定（config.js），請聯絡管理者。'));
     }
     return ensureToken().then(function () {
-      return fetch(CFG.API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args, token: token }) });
+      return fetch(CFG.API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args, token: authToken() }) });
     }).then(function (r) {
       if (!r.ok) throw new Error('伺服器回應錯誤（' + r.status + '），請稍後再試。');
       return r.json();
     }).then(function (j) {
+      if (j && j.session) saveSess(j.session);
       if (j && j.ok) return j.result;
       var msg = (j && j.error) || '未知錯誤';
       if (/尚未開通/.test(msg) && tokenEmail()) msg += '（目前登入：' + tokenEmail() + '，如帳號不對請按右上「切換帳號」）';

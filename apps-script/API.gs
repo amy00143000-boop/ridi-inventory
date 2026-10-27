@@ -10,8 +10,11 @@ var API_EMAIL_ = '';
 function doPost(e) {
   let body = {};
   try { body = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (err) { return apiOut_({ ok:false, error:'請求格式錯誤' }); }
+  let session = null;
   try {
-    API_EMAIL_ = apiVerify_(String(body.token || ''));
+    const tk = String(body.token || '');
+    if (tk.indexOf('S.') === 0) { const s = apiSession_(tk); API_EMAIL_ = s.email; if (s.exp - Date.now() < 3 * 86400000) session = apiSign_(s.email); }
+    else { API_EMAIL_ = apiVerify_(tk); session = apiSign_(API_EMAIL_); }
   } catch (err) {
     return apiOut_({ ok:false, auth:true, error:err.message });
   }
@@ -21,9 +24,9 @@ function doPost(e) {
     if (!Object.prototype.hasOwnProperty.call(fns, fn)) throw Error('不允許的操作：' + fn);
     const args = Array.isArray(body.args) ? body.args : [];
     const result = fns[fn].apply(null, args);
-    return apiOut_({ ok:true, result: result === undefined ? null : result });
+    return apiOut_({ ok:true, result: result === undefined ? null : result, session: session });
   } catch (err) {
-    return apiOut_({ ok:false, error: (err && err.message) || String(err) });
+    return apiOut_({ ok:false, error: (err && err.message) || String(err), session: session });
   } finally {
     API_EMAIL_ = '';
   }
