@@ -33,6 +33,8 @@ p = p.replace('<link rel="manifest"', ROUTER + '<link rel="manifest"', 1)
 p = p.replace("Google 頁面不支援即時相機；可用手機內建相機掃標籤，或下方拍照／選照片。拍照時讓二維碼清晰佔畫面一半以上。",
               "按「掃碼辨識下一項」開啟相機，對準二維碼即可自動辨識；相機無法開啟時可改用拍照。")
 p = fastscan(p)
+import sys as _s; _s.path.insert(0, str(pathlib.Path(__file__).parent)); import fmode
+p = fmode.apply(p)
 (out/'index.html').write_text(p)
 
 l = (src/'LEGACY.html').read_text()
@@ -52,6 +54,8 @@ l = l.replace("Google 入口不提供即時相機。請用下方「拍照／選�
 l = l.replace("'Cổng Google không hỗ trợ camera trực tiếp. Chụp/chọn ảnh bên dưới hoặc quét nhãn bằng camera iPhone.'","'Không mở được camera. Hãy cho phép camera hoặc dùng chụp/chọn ảnh bên dưới.'")
 l = l.replace("此入口僅在 Apps Script 測試部署後可使用。現有正式庫存不受影響。", "請登入後選擇廠別與作業員工，再掃碼或輸入品號。")
 l = l.replace("cameraGoogleHint:[", "cameraStart:['相機啟動中，請將二維碼對準畫面。','Đang mở camera, hãy hướng mã QR vào khung hình.'],cameraGoogleHint:[", 1)
+import fmode as _f2
+l = _f2.apply_ops(l)
 l = l.replace('<title>日帝六廠｜測試掃碼入庫</title>', '<title>日帝汽車｜入庫調撥</title>')
 (out/'ops.html').write_text(l)
 print('ok', len(p), len(l))

@@ -91,7 +91,7 @@
       if (j && j.session) saveSess(j.session);
       if (j && j.ok) return j.result;
       var msg = (j && j.error) || '未知錯誤';
-      if (/尚未開通/.test(msg) && tokenEmail()) msg += '（目前登入：' + tokenEmail() + '，如帳號不對請按右上「切換帳號」）';
+      if (/尚未開通/.test(msg) && tokenEmail()) msg += '（目前登入：' + tokenEmail() + '，如帳號不對請按「切換」→「切換 Google 帳號」）';
       if (j && j.auth && !retried) { clear(); return call(fn, args, true); }
       if (j && j.auth) { clear(); showOverlay(msg); }
       throw new Error(msg);
@@ -216,10 +216,11 @@
   document.addEventListener('change', function (e) { if (e.target && e.target.id === 'branch' && e.target.value) loadCat(e.target.value); }, true);
   setInterval(function () { var s = document.getElementById('branch'); if (s && s.value && valid()) loadCat(s.value); }, 60000);
   document.addEventListener('DOMContentLoaded', function () {
-    var b = document.createElement('button'); b.type = 'button'; b.textContent = '切換帳號';
-    b.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:9000;font-size:12px;padding:6px 10px;border-radius:14px;border:1px solid #c9d3d7;background:#fff;color:#33474f;opacity:.85';
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = '切換 Google 帳號';
     b.onclick = function () { window.ridiSignOut(); };
-    document.body.appendChild(b);
+    var host = document.querySelector('#contextPanel .panel') || document.getElementById('account');
+    if (host) { b.style.cssText = 'display:block;width:100%;margin-top:10px;font-size:13px;min-height:40px;border-radius:10px;border:1px solid #c9d3d7;background:#fff;color:#33474f'; host.appendChild(b); }
+    else { b.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:9000;font-size:12px;padding:6px 10px;border-radius:14px;border:1px solid #c9d3d7;background:#fff;color:#33474f;opacity:.85'; document.body.appendChild(b); }
   });
   window.ridiSignOut = function () {
     clear(); cats = {}; idbClear();
