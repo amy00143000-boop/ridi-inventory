@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>日帝汽車｜入庫調撥</title>
+<!--HEAD-->
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Segoe UI",sans-serif;color:#111;background:#fff}
+button,input,select{font:inherit;touch-action:manipulation}button{cursor:pointer;border:0;border-radius:10px;background:#f0f0f0;color:#111;min-height:40px;padding:0 12px}
+button:disabled{opacity:.4;cursor:default}[hidden]{display:none!important}
+#app{height:100dvh;max-width:480px;margin:auto;display:flex;flex-direction:column;overflow:hidden}
+header{background:#111;color:#fff;padding:8px 14px 8px;flex-shrink:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#ctx{font-size:14px;color:#d4d4d4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;color:#d4d4d4;padding:0;min-height:32px;text-align:left}
+.links{display:flex;gap:12px;flex-shrink:0}.links button{background:none;color:#FACC15;text-decoration:underline;padding:0;min-height:32px;font-size:13px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#262626;padding:4px;border-radius:10px;margin-top:6px}
+.tabs button,.tabs a{min-height:36px;border-radius:8px;background:none;color:#d4d4d4;font-size:15px;text-align:center;line-height:36px;text-decoration:none}
+.tabs .on{background:#FACC15;color:#111;font-weight:700}
+#dock{position:relative;height:118px;background:#262626;overflow:hidden;flex-shrink:0;cursor:pointer}
+#dock video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#dock video[hidden]~.frame{display:none}.frame{position:absolute;left:50%;top:50%;width:200px;height:84px;transform:translate(-50%,-50%);border:3px solid #FACC15;border-radius:12px;pointer-events:none}
+#idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#d4d4d4;font-size:14px;pointer-events:none}
+#camMsg{position:absolute;left:8px;right:8px;bottom:4px;margin:0;color:#FACC15;font-size:12px;text-align:center;text-shadow:0 1px 2px #000;pointer-events:none;white-space:pre-wrap}
+.photo{position:absolute;right:8px;top:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;border-radius:8px;padding:0 10px;line-height:30px;overflow:hidden}
+.photo input{position:absolute;inset:0;opacity:0}
+main{flex:1;min-height:0;overflow:auto;padding:8px 14px}
+.row{display:flex;gap:8px;align-items:center}
+.lbl{font-size:13px;font-weight:700;margin:2px 0 6px}
+#po{flex:1;min-width:0;border:2px solid #111;border-radius:10px;padding:8px 10px;font-size:16px;font-weight:700}
+.plants{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.plants button{font-size:13px;padding:0}.plants .on{background:#111;color:#FACC15;font-weight:700}
+.sub{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#f0f0f0;border-radius:10px;padding:3px;margin-bottom:8px}.sub button{min-height:34px;background:none;font-size:14px}.sub .on{background:#111;color:#FACC15;font-weight:700}
+.sumline{display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 6px}.sumline b{font-size:15px}.sumline span{font-size:13px;color:#404040}
+.line{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 12px;border-radius:12px;background:#f5f5f5;border:2px solid #f5f5f5;margin-bottom:6px;min-height:52px}
+.line.sel{background:#FEF9C3;border-color:#111}.line .t{flex:1;min-width:0}.line .n{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.line .m{font-size:12px;color:#404040}.line .m.bad{color:#B91C1C;font-weight:700}.line .q{font-size:22px;font-weight:700;min-width:44px;text-align:right}.line .u{font-size:13px;color:#404040;width:22px}
+.empty{font-size:14px;color:#525252;text-align:center;padding:18px 8px;background:#f5f5f5;border-radius:12px}
+#keys{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:6px 14px 0;flex-shrink:0}
+#keys button{min-height:40px;font-size:20px;font-weight:700;padding:0}#keys .fn{background:#e5e5e5;font-size:15px}#keys .del{background:#FEE2E2;color:#991B1B;font-size:15px}
+#keys.off button{opacity:.35}
+footer{padding:8px 14px calc(10px + env(safe-area-inset-bottom));flex-shrink:0}
+#go{width:100%;min-height:52px;background:#111;color:#FACC15;font-size:17px;font-weight:700;border-radius:14px}
+#go:disabled{background:#e5e5e5;color:#737373;opacity:1}
+.toast{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:calc(100% - 28px);max-width:452px;background:#FACC15;color:#111;font-weight:700;font-size:14px;padding:10px 14px;border-radius:12px;z-index:50;white-space:pre-wrap;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.toast.err{background:#B91C1C;color:#fff}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:90dvh;overflow:auto}
+.sheet h2{margin:0 0 12px;font-size:19px}.sheet select{width:100%;min-height:46px;border:1px solid #d4d4d4;border-radius:10px;padding:0 10px;font-size:16px;margin-bottom:10px;background:#fff}
+.sheet .pri{width:100%;min-height:50px;background:#111;color:#FACC15;font-weight:700;font-size:16px;margin-top:6px}.sheet .sec{width:100%;margin-top:8px}
+.kv{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #eee;padding:9px 0;font-size:14px}.kv span:first-child{color:#525252;white-space:nowrap}
+/* 總覽 */
+#ov{flex:1;min-height:0;display:flex;flex-direction:column;background:#f5f5f5}
+.ovh{background:#111;color:#fff;padding:10px 14px 12px;flex-shrink:0}
+.ovh .bar{display:flex;align-items:center;gap:8px}.ovh .bar button{background:none;color:#fff;font-size:22px;min-height:36px;padding:0 6px}
+.ovh h2{margin:0;font-size:17px}.ovh small{color:#d4d4d4;font-size:12px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.tiles button{background:#262626;color:#fff;border-radius:12px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:4px 0}
+.tiles button b{font-size:22px;line-height:1.1}.tiles button span{font-size:12px}.tiles .on{background:#FACC15;color:#111}
+#ovBody{flex:1;overflow:auto;padding:10px 14px 16px}
+.card{background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:8px;border:2px solid #fff}.card.hot{border-color:#111}
+.card .h{display:flex;justify-content:space-between;align-items:center;gap:8px}.card .h b{font-size:15px}
+.badge{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:#e5e5e5;white-space:nowrap}.badge.y{background:#FACC15}.badge.r{background:#FEE2E2;color:#991B1B}.badge.g{background:#DCFCE7;color:#14532D}
+.card .it{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-top:4px}.card .it span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.card .it span:last-child{font-weight:700;white-space:nowrap}
+.card .f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;font-size:12px;color:#404040}
+.card .f button{min-height:36px;font-size:14px;font-weight:700;background:#111;color:#FACC15}.card .f button.lite{background:#f0f0f0;color:#111;font-weight:400}
+.hint2{font-size:13px;color:#404040;margin:0 0 8px}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="top"><button id="ctx" type="button">讀取中…</button><div class="links"><button id="ovBtn" type="button">總覽</button><button id="moreBtn" type="button">主管作業</button></div></div>
+  <div class="tabs"><button id="tIn" type="button">入庫</button><a id="tCount" href="./">盤點</a><button id="tOut" type="button">調撥</button></div>
+</header>
+
+<section id="work" style="flex:1;min-height:0;display:flex;flex-direction:column">
+  <div id="dock" role="button" aria-label="相機掃碼區"><div id="idle">點此開啟相機掃碼　Chạm để quét</div><video id="video" hidden muted playsinline></video><div class="frame"></div><p id="camMsg"></p><label class="photo">拍照辨識<input id="photoInput" type="file" accept="image/*" capture="environment" aria-label="拍照辨識二維碼"></label></div>
+  <main>
+    <div id="inHead"><div class="lbl">進貨單號</div><div class="row"><input id="po" autocomplete="off" aria-label="進貨單號"><button id="poNew" type="button">新單號</button></div></div>
+    <div id="outHead" hidden><div class="lbl">送到哪一廠</div><div class="plants" id="plants"></div></div>
+    <div class="sumline"><b>本單總覽</b><span id="sum">共 0 項 · 合計 0 件</span></div>
+    <div id="lines"></div>
+  </main>
+  <div id="keys"></div>
+  <footer><button id="go" type="button" disabled>確認送出</button></footer>
+</section>
+
+<section id="ov" hidden>
+  <div class="ovh">
+    <div class="bar"><button id="ovBack" type="button" aria-label="返回">‹</button><div><h2 id="ovTitle">總覽</h2><small id="ovSub"></small></div></div>
+    <div class="tiles" id="tiles"></div>
+  </div>
+  <div id="ovBody"></div>
+</section>
+</div>
+
+<div id="ctxPanel" class="overlay" hidden><div class="sheet"><h2>作業廠別與員工</h2><label class="lbl" for="selBranch">作業廠別</label><select id="selBranch"></select><label class="lbl" for="selEmp">作業員工</label><select id="selEmp"></select><button id="ctxOk" class="pri" type="button">確認</button><button id="ctxCancel" class="sec" type="button">取消</button></div></div>
+<div id="cfPanel" class="overlay" hidden><div class="sheet"><h2 id="cfTitle">確認送出</h2><div id="cfBody"></div><button id="cfOk" class="pri" type="button">確認送出</button><button id="cfCancel" class="sec" type="button">返回修改</button></div></div>
+<div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
+<script src="scanner.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var NAMES={RD1:'新北總廠',RD2:'竹北',RD3:'台中',RD4:'嘉義',RD5:'台南',RD6:'高雄'};
+var auth=null,branch='',emp='',mode='in',view='work',busy=false,ovData=null,ovTab='',ovRange='today';
+var draft={in:{po:'',lines:[]},out:{to:'',lines:[]}},sel=-1,fresh=true;
+function rpc(fn){var a=[].slice.call(arguments,1);return new Promise(function(ok,no){google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn].apply(null,a);});}
+function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
+function dkey(){return 'ridi_ops_draft|'+branch;}
+function save(){store(dkey(),draft);}
+function uuid(){return (crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)+'-0000-0000');}
+function newPo(){var t=new Date(Date.now()+8*3600000);return 'IN-'+t.toISOString().slice(2,10).replace(/-/g,'')+'-'+t.toISOString().slice(11,16).replace(':','');}
+var tt=null;function toast(m,err){var t=$('toast');t.textContent=m;t.className='toast'+(err?' err':'');t.hidden=false;clearTimeout(tt);tt=setTimeout(function(){t.hidden=true},err?6000:2600);}
+function empName(){var e=(auth&&auth.employees||[]).filter(function(x){return x.id===emp})[0];return e?e.name+' '+e.id:'未選員工';}
+function cur(){return draft[mode];}
+function fmt(n){return (Math.round(n*1000)/1000).toString();}
+
+/* ---- 掃碼 ---- */
+var last={code:'',seen:0},restartT=null;
+var scanner=createDiyiScanner($('video'),function(code){onCode(code,'相機掃碼');},function(m){$('camMsg').textContent=m||'';});
+function camOn(){if(view!=='work'||!$('ctxPanel').hidden||!$('cfPanel').hidden||document.hidden)return;if(!$('video').hidden)return;scanner.start().catch(function(e){$('camMsg').textContent=(e&&e.message)||'相機無法開啟';});}
+function camOff(){clearTimeout(restartT);scanner.stop();}
+$('dock').addEventListener('click',function(e){if(e.target.closest('.photo'))return;camOn();});
+$('photoInput').onchange=function(){var f=$('photoInput').files[0];camOff();scanner.photo(f).catch(function(e){toast(e.message||'辨識失敗',true)}).then(function(){$('photoInput').value='';});};
+document.addEventListener('visibilitychange',function(){if(document.hidden)camOff();else camOn();});
+window.addEventListener('pagehide',camOff);
+function onCode(code,method){
+  var now=Date.now();
+  if(code===last.code&&now-last.seen<2500){last.seen=now;restartT=setTimeout(camOn,500);return;}
+  last={code:code,seen:now};
+  addItem(code,method).then(function(){restartT=setTimeout(camOn,900);});
+}
+function addItem(raw,method){
+  if(!branch)return Promise.resolve();
+  return rpc('lookup',branch,raw).then(function(d){
+    var L=cur().lines,i=-1;L.forEach(function(x,k){if(x.code===d.code)i=k;});
+    if(i>=0){L[i].qty+=1;}else{L.push({code:d.code,sku:d.sku,name:d.name,unit:d.unit||'',qty:1,balance:(typeof d.balance==='number'?d.balance:null),scannedAt:new Date().toISOString(),method:method||'相機掃碼'});i=L.length-1;}
+    sel=i;fresh=true;save();render();
+    if(navigator.vibrate)navigator.vibrate(40);
+    $('camMsg').textContent='已加入 '+d.name+' → '+fmt(L[i].qty)+' '+(d.unit||'');
+  },function(e){toast((e&&e.message)||'查無物料',true);});
+}
+
+/* ---- 數字鍵 ---- */
+(function(){var k=$('keys');['1','2','3','4','5','6','7','8','9','0','+1','−1','⌫','清除','移除'].forEach(function(x){var b=document.createElement('button');b.type='button';b.textContent=x;b.dataset.k=x;if(x.length>1||x==='⌫')b.className=x==='移除'?'del':'fn';k.appendChild(b);});
+k.addEventListener('click',function(e){var b=e.target.closest('button');if(!b||k.classList.contains('off'))return;var L=cur().lines,ln=L[sel];if(!ln)return;var x=b.dataset.k,s=String(ln.qty);
+ if(/^\d$/.test(x)){s=fresh?x:(s==='0'?x:s+x);fresh=false;ln.qty=Math.min(Number(s),1e9);}
+ else if(x==='+1'){ln.qty+=1;fresh=false;}else if(x==='−1'){ln.qty=Math.max(0,ln.qty-1);fresh=false;}
+ else if(x==='⌫'){s=s.slice(0,-1);ln.qty=Number(s||0);fresh=false;}else if(x==='清除'){ln.qty=0;fresh=false;}
+ else if(x==='移除'){L.splice(sel,1);sel=L.length-1;fresh=true;}
+ save();render();});})();
+
+/* ---- 畫面 ---- */
+function render(){
+  $('tIn').className=mode==='in'?'on':'';$('tOut').className=mode==='out'?'on':'';
+  $('ctx').textContent=(emp?empName():'請選擇員工')+' · '+(NAMES[branch]||'')+' '+branch;
+  $('tCount').href='./?branch='+encodeURIComponent(branch)+(emp?'&employee='+encodeURIComponent(emp):'');
+  $('inHead').hidden=mode!=='in';$('outHead').hidden=mode!=='out';
+  $('po').value=draft.in.po;
+  var P=$('plants');P.replaceChildren();Object.keys(NAMES).filter(function(k){return k!==branch}).forEach(function(k){var b=document.createElement('button');b.type='button';b.textContent=NAMES[k];b.className=draft.out.to===k?'on':'';b.onclick=function(){draft.out.to=k;save();render();};P.appendChild(b);});
+  var L=cur().lines,box=$('lines'),total=0,over=0;box.replaceChildren();
+  if(!L.length){var e=document.createElement('div');e.className='empty';e.textContent=mode==='in'?'掃描商品標籤，加入本次入庫清單':'掃描要調撥的商品標籤';box.appendChild(e);}
+  L.forEach(function(ln,i){total+=ln.qty;var bad=mode==='out'&&ln.balance!==null&&ln.qty>ln.balance;if(bad)over++;
+    var b=document.createElement('button');b.type='button';b.className='line'+(i===sel?' sel':'');
+    var t=document.createElement('span');t.className='t';var n=document.createElement('div');n.className='n';n.textContent=ln.name;var m=document.createElement('div');m.className='m'+(bad||ln.error?' bad':'');
+    m.textContent=ln.error?('未送出：'+ln.error):mode==='out'?(ln.balance===null?ln.sku+' · 本廠帳面未建立':bad?'超過本廠帳面 '+fmt(ln.balance)+' '+ln.unit:ln.sku+' · 帳面 '+fmt(ln.balance)+' → 剩 '+fmt(ln.balance-ln.qty)):(ln.sku+(ln.balance!==null?' · 入庫後 '+fmt(ln.balance+ln.qty)+' '+ln.unit:''));
+    t.append(n,m);var q=document.createElement('span');q.className='q';q.textContent=fmt(ln.qty);var u=document.createElement('span');u.className='u';u.textContent=ln.unit;
+    b.append(t,q,u);b.onclick=function(){sel=i;fresh=true;render();};box.appendChild(b);});
+  if(sel>=0&&box.children[sel])box.children[sel].scrollIntoView({block:'nearest'});
+  $('sum').textContent='共 '+L.length+' 項 · 合計 '+fmt(total)+' 件';
+  $('keys').classList.toggle('off',!L[sel]);
+  var zero=L.some(function(x){return !(x.qty>0)});
+  var g=$('go'),why='';
+  if(!emp)why='請先選擇作業員工';else if(!L.length)why='尚未掃描商品';else if(zero)why='有品項數量為 0';else if(mode==='in'&&!draft.in.po.trim())why='請填進貨單號';else if(mode==='out'&&!draft.out.to)why='請選擇目的廠';else if(over)why='有 '+over+' 項超過帳面，請修正';
+  g.disabled=!!why||busy;g.textContent=busy?'送出中…':why||(mode==='in'?'確認入庫 '+L.length+' 項（'+fmt(total)+' 件）':'確認調撥 '+L.length+' 項 → '+NAMES[draft.out.to]+' '+draft.out.to);
+}
+$('po').oninput=function(){draft.in.po=$('po').value;save();render();};
+$('poNew').onclick=function(){draft.in.po=newPo();save();render();};
+$('tIn').onclick=function(){mode='in';last={code:'',seen:0};sel=draft.in.lines.length-1;history.replaceState(null,'','./?type='+encodeURIComponent('入庫')+'&branch='+branch);render();};
+$('tOut').onclick=function(){mode='out';last={code:'',seen:0};sel=draft.out.lines.length-1;history.replaceState(null,'','./?type='+encodeURIComponent('調撥出貨')+'&branch='+branch);render();};
+$('moreBtn').onclick=function(){location.href='legacy.html?branch='+encodeURIComponent(branch)+(emp?'&employee='+encodeURIComponent(emp):'');};
+
+/* ---- 送出 ---- */
+$('go').onclick=function(){
+  var L=cur().lines,total=L.reduce(function(a,x){return a+x.qty},0),rows=[['作業',mode==='in'?'入庫':'調撥出貨'],['廠別',NAMES[branch]+' '+branch]];
+  if(mode==='in')rows.push(['進貨單號',draft.in.po.trim()]);else rows.push(['送到',NAMES[draft.out.to]+' '+draft.out.to]);
+  rows.push(['品項',L.length+' 項，合計 '+fmt(total)+' 件'],['作業員工',empName()]);
+  var B=$('cfBody');B.replaceChildren();rows.concat(L.map(function(x){return [x.name,fmt(x.qty)+' '+x.unit]})).forEach(function(r){var d=document.createElement('div');d.className='kv';var a=document.createElement('span'),b=document.createElement('span');a.textContent=r[0];b.textContent=r[1];d.append(a,b);B.appendChild(d);});
+  $('cfTitle').textContent=mode==='in'?'確認入庫':'確認調撥';camOff();$('cfPanel').hidden=false;
+};
+$('cfCancel').onclick=function(){$('cfPanel').hidden=true;camOn();};
+$('cfOk').onclick=function(){
+  if(busy)return;var d=cur(),L=d.lines;d.batch=d.batch||uuid();
+  var list=L.map(function(x,i){var p={type:mode==='in'?'入庫':'調撥出貨',branch:branch,code:x.code,quantity:x.qty,employeeId:emp,requestId:d.batch+'-'+(i+1),scannedAt:x.scannedAt,scanMethod:x.method};
+    if(Date.now()-Date.parse(x.scannedAt)>23*3600000){delete p.scannedAt;delete p.scanMethod;}
+    if(mode==='in')p.document=d.po.trim()+'/'+String(i+1).padStart(2,'0');else p.target=d.to;return p;});
+  busy=true;$('cfPanel').hidden=true;save();render();
+  rpc('transactBatch',list).then(function(res){
+    var okN=0,keep=[];res.forEach(function(r,i){if(r.ok)okN++;else{L[i].error=r.error;keep.push(L[i]);}});
+    if(!keep.length){toast((mode==='in'?'已入庫 ':'已調撥 ')+okN+' 項'+(mode==='out'?' → '+NAMES[d.to]:''));d.lines=[];d.batch='';if(mode==='in')d.po=newPo();}
+    else{toast('成功 '+okN+' 項，失敗 '+keep.length+' 項，請查看紅字後重送',true);d.lines=keep;d.batch='';}
+    sel=d.lines.length-1;fresh=true;save();
+  },function(e){toast('送出失敗：'+((e&&e.message)||'')+'\n資料已保留，可直接再按送出（不會重複入帳）',true);}).then(function(){busy=false;render();camOn();});
+};
+
+/* ---- 廠別／員工 ---- */
+function fillEmp(b,want){var s=$('selEmp');s.replaceChildren(new Option('請選擇員工',''));var rows=auth.employees.filter(function(e){return e.branch===b});rows.forEach(function(e){s.add(new Option(e.name+' '+e.id,e.id));});
+  s.value=rows.some(function(e){return e.id===want})?want:((rows.filter(function(e){return e.mine})[0]||(rows.length===1?rows[0]:{})).id||'');}
+$('ctx').onclick=function(){if(!auth)return;camOff();$('selBranch').value=branch;fillEmp(branch,emp);$('ctxPanel').hidden=false;};
+$('selBranch').onchange=function(){fillEmp($('selBranch').value,'');};
+$('ctxCancel').onclick=function(){$('ctxPanel').hidden=true;camOn();};
+$('ctxOk').onclick=function(){setCtx($('selBranch').value,$('selEmp').value);$('ctxPanel').hidden=true;camOn();};
+function setCtx(b,e){branch=b;emp=e;store('ridi_ctx',{branch:b,employee:e});draft=store(dkey())||{in:{po:newPo(),lines:[]},out:{to:'',lines:[]}};if(!draft.in.po)draft.in.po=newPo();sel=cur().lines.length-1;rpc('weeklyCounts',b).catch(function(){});render();}
+
+/* ---- 總覽 ---- */
+function showOv(on){view=on?'ov':'work';$('work').hidden=on;$('ov').hidden=!on;if(on){camOff();loadOv();}else camOn();}
+$('ovBtn').onclick=function(){showOv(true);};$('ovBack').onclick=function(){showOv(false);};
+function loadOv(){$('ovTitle').textContent=mode==='in'?'入庫總覽':'調撥總覽';$('ovSub').textContent=(NAMES[branch]||'')+' '+branch+' · 讀取中…';$('tiles').replaceChildren();$('ovBody').replaceChildren();
+  rpc('movementOverview',branch,45).then(function(d){ovData=d;if(!ovTab)ovTab='in';drawOv();},function(e){$('ovSub').textContent='讀取失敗：'+((e&&e.message)||'');});}
+function tile(n,label,on,fn){var b=document.createElement('button');b.type='button';b.className=on?'on':'';var x=document.createElement('b');x.textContent=n;var y=document.createElement('span');y.textContent=label;b.append(x,y);b.onclick=fn;return b;}
+function dt(ms){var t=new Date(ms+8*3600000);return (t.getUTCMonth()+1)+'/'+t.getUTCDate()+' '+String(t.getUTCHours()).padStart(2,'0')+':'+String(t.getUTCMinutes()).padStart(2,'0');}
+function groups(list){var m={},o=[];list.forEach(function(r){var k=r.group||r.id;if(!m[k]){m[k]={key:k,rows:[]};o.push(m[k]);}m[k].rows.push(r);});return o.reverse();}
+function drawOv(){
+  var d=ovData,T=$('tiles'),B=$('ovBody');T.replaceChildren();B.replaceChildren();
+  if(mode==='out'){
+    $('ovSub').textContent=(NAMES[branch]||'')+' '+branch+' · 近 45 天';
+    var inc=d.transfers.filter(function(r){return r.status==='transit'&&r.to===branch}),out=d.transfers.filter(function(r){return r.status==='transit'&&r.from===branch}),done=d.transfers.filter(function(r){return r.status!=='transit'});
+    var gi=groups(inc),go=groups(out),gd=groups(done);
+    T.append(tile(gi.length,'待收',ovTab==='in',function(){ovTab='in';drawOv()}),tile(go.length,'在途',ovTab==='out',function(){ovTab='out';drawOv()}),tile(gd.length,'已完成',ovTab==='done',function(){ovTab='done';drawOv()}));
+    var hint={in:'別廠送來，確認數量無誤後按「確認收貨」',out:'本廠送出、對方尚未收貨（超過 2 天標紅）',done:'已收貨或已取消'}[ovTab];
+    var p=document.createElement('p');p.className='hint2';p.textContent=hint;B.appendChild(p);
+    var G={in:gi,out:go,done:gd}[ovTab];if(!G.length){var e=document.createElement('div');e.className='empty';e.textContent='沒有資料';B.appendChild(e);}
+    G.forEach(function(g){var r0=g.rows[0],c=document.createElement('div');c.className='card'+(ovTab==='in'?' hot':'');
+      var h=document.createElement('div');h.className='h';var t=document.createElement('b');t.textContent=(r0.from===branch?'本廠':NAMES[r0.from]+' '+r0.from)+' → '+(r0.to===branch?'本廠':NAMES[r0.to]+' '+r0.to);
+      var bd=document.createElement('span'),age=(d.now-r0.time)/86400000;
+      if(r0.status==='transit'){bd.className='badge '+(ovTab==='in'?'y':age>2?'r':'');bd.textContent=ovTab==='in'?'待收':age>2?'在途 '+Math.floor(age)+' 天':'在途';}else{bd.className='badge g';bd.textContent=r0.status==='done'?'已收貨':'已取消';}
+      h.append(t,bd);c.appendChild(h);
+      g.rows.forEach(function(r){var it=document.createElement('div');it.className='it';var a=document.createElement('span'),b=document.createElement('span');a.textContent=r.name;b.textContent=fmt(r.qty)+' '+r.unit;it.append(a,b);c.appendChild(it);});
+      var f=document.createElement('div');f.className='f';var s=document.createElement('span');s.textContent=dt(r0.time)+' · '+r0.who+(r0.closedAt?'｜'+dt(r0.closedAt)+' '+r0.closedBy:'');f.appendChild(s);
+      if(ovTab==='in'){var b1=document.createElement('button');b1.type='button';b1.textContent='確認收貨';b1.onclick=function(){act(g,'調撥收貨',b1);};f.appendChild(b1);}
+      if(ovTab==='out'){var b2=document.createElement('button');b2.type='button';b2.className='lite';b2.textContent='取消調撥';b2.onclick=function(){act(g,'調撥取消',b2);};f.appendChild(b2);}
+      c.appendChild(f);B.appendChild(c);});
+  }else{
+    var now=d.now,t8=new Date(now+8*3600000),day0=Date.UTC(t8.getUTCFullYear(),t8.getUTCMonth(),t8.getUTCDate())-8*3600000,wk0=day0-((t8.getUTCDay()+6)%7)*86400000,mo0=Date.UTC(t8.getUTCFullYear(),t8.getUTCMonth(),1)-8*3600000;
+    var from={today:day0,week:wk0,month:mo0}[ovRange];var rows=d.inbound.filter(function(r){return r.time>=from&&!r.reversed});
+    var docs={},order=[];rows.forEach(function(r){var k=r.doc.split('/')[0];if(!docs[k]){docs[k]={no:k,rows:[],time:r.time,who:r.who};order.push(k);}docs[k].rows.push(r);docs[k].time=Math.max(docs[k].time,r.time);});
+    $('ovSub').textContent=(NAMES[branch]||'')+' '+branch+' · 共 '+order.length+' 張進貨單、'+rows.length+' 筆、'+fmt(rows.reduce(function(a,r){return a+r.qty},0))+' 件';
+    T.append(tile('今天','',ovRange==='today',function(){ovRange='today';drawOv()}),tile('本週','',ovRange==='week',function(){ovRange='week';drawOv()}),tile('本月','',ovRange==='month',function(){ovRange='month';drawOv()}));
+    if(!order.length){var e2=document.createElement('div');e2.className='empty';e2.textContent='這段期間沒有入庫';B.appendChild(e2);}
+    order.reverse().forEach(function(k){var D=docs[k],c=document.createElement('div');c.className='card';var h=document.createElement('div');h.className='h';var t=document.createElement('b');t.textContent=D.no;var s=document.createElement('span');s.className='badge';s.textContent=dt(D.time);h.append(t,s);c.appendChild(h);
+      D.rows.forEach(function(r){var it=document.createElement('div');it.className='it';var a=document.createElement('span'),b=document.createElement('span');a.textContent=r.name;b.textContent=fmt(r.qty)+' '+r.unit;it.append(a,b);c.appendChild(it);});
+      var f=document.createElement('div');f.className='f';f.textContent=D.who+' 入庫';c.appendChild(f);B.appendChild(c);});
+  }
+}
+function act(g,type,btn){
+  if(!emp){toast('請先選擇作業員工',true);return;}
+  var word=type==='調撥收貨'?'收貨':'取消';
+  if(btn.dataset.armed!=='1'){btn.dataset.armed='1';btn.textContent='再按一次確認'+word;setTimeout(function(){btn.dataset.armed='';btn.textContent=type==='調撥收貨'?'確認收貨':'取消調撥';},4000);return;}
+  btn.disabled=true;btn.textContent=word+'中…';var id=uuid();
+  rpc('transactBatch',g.rows.map(function(r,i){return {type:type,branch:branch,related:r.id,employeeId:emp,requestId:id+'-'+(i+1)};})).then(function(res){
+    var bad=res.filter(function(r){return !r.ok});if(bad.length)toast(word+'失敗 '+bad.length+' 項：'+bad[0].error,true);else toast('已'+word+' '+res.length+' 項');loadOv();
+  },function(e){toast(word+'失敗：'+((e&&e.message)||''),true);btn.disabled=false;});
+}
+
+/* ---- 啟動 ---- */
+google.script.url.getLocation(function(loc){
+  var q=loc.parameter||{};mode=/調撥/.test(q.type||'')?'out':'in';
+  rpc('bootstrap').then(function(a){auth=a;if(!a.branches.length)throw Error('沒有分廠權限');
+    var s=$('selBranch');a.branches.forEach(function(b){s.add(new Option((NAMES[b]||b)+' '+b,b));});
+    var c=store('ridi_ctx')||{},b=a.branches.indexOf(q.branch)>=0?q.branch:a.branches.indexOf(c.branch)>=0?c.branch:a.branches[0];
+    var want=q.employee||c.employee||'',rows=a.employees.filter(function(e){return e.branch===b});
+    var e=rows.some(function(x){return x.id===want})?want:((rows.filter(function(x){return x.mine})[0]||(rows.length===1?rows[0]:{})).id||'');
+    setCtx(b,e);if(!e){$('ctx').click();}else camOn();
+  }).catch(function(e){$('ctx').textContent=(e&&e.message)||'讀取失敗';toast((e&&e.message)||'讀取失敗',true);});
+});
+render();
+})();
+</script>
+</body>
+</html>

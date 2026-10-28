@@ -185,6 +185,7 @@
     }
     var p2 = call(fn, args);
     if (fn === 'transact') p2.then(function (r) { afterTransact(args[0] || {}, r); }, function () {});
+    if (fn === 'transactBatch') p2.then(function () { Object.keys(cats).forEach(function (x) { cats[x].at = 0; }); setTimeout(function () { Object.keys(cats).forEach(function (x) { loadCat(x, true); }); }, 800); }, function () {});
     return p2;
   }
 
@@ -218,7 +219,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     var b = document.createElement('button'); b.type = 'button'; b.textContent = '切換 Google 帳號';
     b.onclick = function () { window.ridiSignOut(); };
-    var host = document.querySelector('#contextPanel .panel') || document.getElementById('account');
+    var host = document.querySelector('#contextPanel .panel') || document.querySelector('#ctxPanel .sheet') || document.getElementById('account');
     if (host) { b.style.cssText = 'display:block;width:100%;margin-top:10px;font-size:13px;min-height:40px;border-radius:10px;border:1px solid #c9d3d7;background:#fff;color:#33474f'; host.appendChild(b); }
     else { b.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:9000;font-size:12px;padding:6px 10px;border-radius:14px;border:1px solid #c9d3d7;background:#fff;color:#33474f;opacity:.85'; document.body.appendChild(b); }
   });

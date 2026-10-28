@@ -41,7 +41,7 @@ l = (src/'LEGACY.html').read_text()
 l = fastscan(l)
 l = l.replace('<style>', HEAD + '<style>', 1)
 # 同一網址：網址列顯示首頁；按「盤點」回首頁盤點畫面
-OPS_JS = ("<script>try{history.replaceState(null,'','./'+location.search+location.hash)}catch(e){}"
+OPS_JS = ("<script>"
   "document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-action=\"盤點提報\"]');if(!b)return;"
   "e.preventDefault();e.stopImmediatePropagation();var q=new URLSearchParams();var br=document.getElementById('branch'),em=document.getElementById('employee'),cd=document.getElementById('code');"
   "if(br&&br.value)q.set('branch',br.value);if(em&&em.value)q.set('employee',em.value);if(cd&&cd.value.trim())q.set('id',cd.value.trim());"
@@ -56,6 +56,18 @@ l = l.replace("此入口僅在 Apps Script 測試部署後可使用。現有正�
 l = l.replace("cameraGoogleHint:[", "cameraStart:['相機啟動中，請將二維碼對準畫面。','Đang mở camera, hãy hướng mã QR vào khung hình.'],cameraGoogleHint:[", 1)
 import fmode as _f2
 l = _f2.apply_ops(l)
-l = l.replace('<title>日帝六廠｜測試掃碼入庫</title>', '<title>日帝汽車｜入庫調撥</title>')
-(out/'ops.html').write_text(l)
-print('ok', len(p), len(l))
+l = l.replace('<title>日帝六廠｜測試掃碼入庫</title>', '<title>日帝汽車｜主管作業</title>')
+(out/'legacy.html').write_text(l)
+
+# 掃碼元件獨立成 scanner.js（jsQR＋相機掃碼，已含加速）
+scr = re.findall(r'<script>(.*?)</script>', l, re.S)
+js = [x for x in scr if 'webpackUniversalModuleDefinition' in x or 'window.createDiyiScanner' in x]
+if len(js) != 2: raise SystemExit('找不到掃碼元件')
+(out/'scanner.js').write_text(';\n'.join(js))
+
+# 新版入庫／調撥頁
+o = (out/'tools'/'ops.src.html').read_text() if (out/'tools'/'ops.src.html').exists() else (pathlib.Path(__file__).parent/'ops.src.html').read_text()
+o = must(o, '<!--HEAD-->', "<script>try{history.replaceState(null,'','./'+location.search+location.hash)}catch(e){}</script>" + HEAD.replace('#18394A', '#111111'))
+o = o.replace('src="scanner.js"', 'src="scanner.js?v=' + __import__('time').strftime('%Y%m%d%H%M') + '"')
+(out/'ops.html').write_text(o)
+print('ok', len(p), len(l), len(o))
