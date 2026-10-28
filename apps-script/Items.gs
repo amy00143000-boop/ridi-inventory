@@ -13,8 +13,15 @@ function ensureBranchRows_(sh,b,keys){const n=sh.getLastRow(),w=sh.getLastColumn
 function ensureItems_(){const db=db_(),s=db.getSheetById(251646983),c=masterCols_(s);if(c.key<0||c.name<0)return {keys:0,branchRows:0};let n=s.getLastRow();if(n<2)return {keys:0,branchRows:0};
  const filled=r=>String(r[c.name]).trim()&&(c.cc<0||String(r[c.cc]).trim());
  let v=s.getRange(2,1,n-1,c.w).getValues();
- // 0 分類代碼空白時，依同一「分類」名稱的其他品項自動補上
- if(c.cc>=0&&c.cat>=0){const map={};v.forEach(r=>{const cc=String(r[c.cc]).trim().toUpperCase(),cat=String(r[c.cat]).trim();if(cc&&cat&&!(cat in map))map[cat]=cc;});v.forEach((r,i)=>{const cat=String(r[c.cat]).trim();if(String(r[c.name]).trim()&&!String(r[c.cc]).trim()&&map[cat]){r[c.cc]=map[cat];s.getRange(i+2,c.cc+1).setValue(map[cat]);}});}let maxKey=0;v.forEach(r=>{maxKey=Math.max(maxKey,keyNum_(r[c.key]));});
+ // 0 分類代碼／分類空白時自動補：有分類名稱就對應代碼；兩者都空白就沿用上一列（插在哪一類就歸哪一類）
+ if(c.cc>=0){const c2n={},n2c={};v.forEach(r=>{const cc=String(r[c.cc]).trim().toUpperCase(),cat=c.cat>=0?String(r[c.cat]).trim():'';if(cc&&cat){if(!(cc in c2n))c2n[cc]=cat;if(!(cat in n2c))n2c[cat]=cc;}});
+  v.forEach((r,i)=>{if(!String(r[c.name]).trim())return;let cc=String(r[c.cc]).trim().toUpperCase(),cat=c.cat>=0?String(r[c.cat]).trim():'';
+   if(!cc&&cat&&n2c[cat])cc=n2c[cat];
+   if(!cc&&!cat){for(let j=i-1;j>=0&&!cc;j--){if(String(v[j][c.name]).trim()&&String(v[j][c.cc]).trim()){cc=String(v[j][c.cc]).trim().toUpperCase();cat=c.cat>=0?String(v[j][c.cat]).trim():'';}}for(let j=i+1;j<v.length&&!cc;j++){if(String(v[j][c.name]).trim()&&String(v[j][c.cc]).trim()){cc=String(v[j][c.cc]).trim().toUpperCase();cat=c.cat>=0?String(v[j][c.cat]).trim():'';}}}
+   if(cc&&!cat&&c2n[cc])cat=c2n[cc];
+   if(cc&&cc!==String(r[c.cc]).trim()){r[c.cc]=cc;s.getRange(i+2,c.cc+1).setValue(cc);}
+   if(c.cat>=0&&cat&&cat!==String(r[c.cat]).trim()){r[c.cat]=cat;s.getRange(i+2,c.cat+1).setValue(cat);}});}
+ let maxKey=0;v.forEach(r=>{maxKey=Math.max(maxKey,keyNum_(r[c.key]));});
  // 1 共用品號：補缺號、修正複製造成的重複號
  const seen={};let keys=0;v.forEach((r,i)=>{if(!filled(r))return;let k=String(r[c.key]).trim();if(k&&!seen[k]){seen[k]=1;return;}maxKey++;k=KEY_PREFIX_+String(maxKey).padStart(4,'0');seen[k]=1;s.getRange(i+2,c.key+1).setValue(k);r[c.key]=k;keys++;});
  // 2 依分類代碼歸位（同分類維持原先後順序；用移動整列，不破壞公式與圖片）
