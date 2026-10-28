@@ -10,16 +10,26 @@ function ensureBranchRows_(sh,b,keys){const n=sh.getLastRow(),w=sh.getLastColumn
   if(f[0])sh.getRange(row,1).setFormula('="'+code+' | "&D'+row);else sh.getRange(row,1).setValue(code);
   if(f[2])sh.getRange(row,3).setFormula(f[2].replace(/id=RD[1-6]-\d+/,'id='+code));
   sh.getRange(row,9).setValue(k);});return miss.length;}
-function ensureItems_(){const db=db_(),s=db.getSheetById(251646983),c=masterCols_(s);if(c.key<0||c.name<0)return {keys:0,branchRows:0};const n=s.getLastRow();if(n<2)return {keys:0,branchRows:0};
- const v=s.getRange(2,1,n-1,c.w).getValues();let maxKey=0,maxSeq=0;const skuMax={};
- v.forEach(r=>{maxKey=Math.max(maxKey,keyNum_(r[c.key]));if(c.seq>=0&&typeof r[c.seq]==='number')maxSeq=Math.max(maxSeq,r[c.seq]);if(c.sku>=0){const m=String(r[c.sku]).match(/^([A-Z]{1,4})(\d+)$/);if(m)skuMax[m[1]]=Math.max(skuMax[m[1]]||0,Number(m[2]));}});
- let keys=0;v.forEach((r,i)=>{const row=i+2,name=String(r[c.name]).trim(),sku=c.sku>=0?String(r[c.sku]).trim():'';if(!name&&!sku)return;
-  if(c.seq>=0&&r[c.seq]===''){maxSeq++;s.getRange(row,c.seq+1).setValue(maxSeq);}
-  if(c.sku>=0&&!sku&&c.cc>=0){const p=String(r[c.cc]).trim().toUpperCase();if(/^[A-Z]{1,4}$/.test(p)){skuMax[p]=(skuMax[p]||0)+1;r[c.sku]=p+String(skuMax[p]).padStart(4,'0');s.getRange(row,c.sku+1).setValue(r[c.sku]);}}
-  if(!String(r[c.key]).trim()){maxKey++;r[c.key]=KEY_PREFIX_+String(maxKey).padStart(4,'0');s.getRange(row,c.key+1).setValue(r[c.key]);keys++;}});
- const all=v.filter(r=>String(r[c.name]).trim()&&String(r[c.key]).trim()).map(r=>String(r[c.key]).trim());let branchRows=0;
+function ensureItems_(){const db=db_(),s=db.getSheetById(251646983),c=masterCols_(s);if(c.key<0||c.name<0)return {keys:0,branchRows:0};let n=s.getLastRow();if(n<2)return {keys:0,branchRows:0};
+ const filled=r=>String(r[c.name]).trim()&&(c.cc<0||String(r[c.cc]).trim())&&String(r[c.unit]).trim();
+ let v=s.getRange(2,1,n-1,c.w).getValues();let maxKey=0;v.forEach(r=>{maxKey=Math.max(maxKey,keyNum_(r[c.key]));});
+ // 1 共用品號：補缺號、修正複製造成的重複號
+ const seen={};let keys=0;v.forEach((r,i)=>{if(!filled(r))return;let k=String(r[c.key]).trim();if(k&&!seen[k]){seen[k]=1;return;}maxKey++;k=KEY_PREFIX_+String(maxKey).padStart(4,'0');seen[k]=1;s.getRange(i+2,c.key+1).setValue(k);r[c.key]=k;keys++;});
+ // 2 依分類代碼歸位（同分類維持原先後順序；用移動整列，不破壞公式與圖片）
+ let moved=0;if(c.cc>=0){const ccOf=i=>String(v[i][c.cc]).trim().toUpperCase(),slots=[],rank={};v.forEach((r,i)=>{if(filled(r)){slots.push(i);const k=ccOf(i);if(!(k in rank))rank[k]=Object.keys(rank).length;}});
+  const want=slots.slice().sort((x,y)=>(rank[ccOf(x)]-rank[ccOf(y)])||(x-y)),target=v.map((_,i)=>i);slots.forEach((sl,j)=>{target[sl]=want[j];});
+  const phys=v.map((_,i)=>i);for(let t=0;t<phys.length;t++){if(phys[t]===target[t])continue;const at=phys.indexOf(target[t]);s.moveRows(s.getRange((at+2)+':'+(at+2)),t+2);phys.splice(t,0,phys.splice(at,1)[0]);moved++;}
+  if(moved){SpreadsheetApp.flush();n=s.getLastRow();v=s.getRange(2,1,n-1,c.w).getValues();}}
+ // 3 原始序號 1..N、料號依分類流水重編（只改不同的格，並留紀錄）
+ const fsA=c.seq>=0?s.getRange(2,c.seq+1,n-1,1).getFormulas():null,fsB=c.sku>=0?s.getRange(2,c.sku+1,n-1,1).getFormulas():null;let seq=0;const cnt={},log=[];
+ v.forEach((r,i)=>{if(!filled(r))return;seq++;if(c.seq>=0&&!fsA[i][0]&&String(r[c.seq])!==String(seq))s.getRange(i+2,c.seq+1).setValue(seq);
+  if(c.sku>=0&&c.cc>=0&&!fsB[i][0]){const p=String(r[c.cc]).trim().toUpperCase();if(/^[A-Z]{1,4}$/.test(p)){cnt[p]=(cnt[p]||0)+1;const sku=p+String(cnt[p]).padStart(4,'0');if(String(r[c.sku]).trim()!==sku){log.push([new Date(),String(r[c.key]),String(r[c.name]),String(r[c.sku]),sku]);s.getRange(i+2,c.sku+1).setValue(sku);r[c.sku]=sku;}}}});
+ if(log.length){let lg=db.getSheetByName('料號變更紀錄');if(!lg){lg=db.insertSheet('料號變更紀錄');lg.getRange(1,1,1,5).setValues([['時間','共用品號','品名','原料號','新料號']]);}lg.getRange(lg.getLastRow()+1,1,log.length,5).setValues(log);}
+ // 4 六個廠補列
+ const all=v.filter(r=>filled(r)&&String(r[c.key]).trim()).map(r=>String(r[c.key]).trim());let branchRows=0;
  for(let k=1;k<=6;k++){const sh=branch_(db,'RD'+k);if(sh)branchRows+=ensureBranchRows_(sh,'RD'+k,all);}
- if(keys||branchRows)SpreadsheetApp.flush();return {keys,branchRows};}
+ if(keys||moved||log.length||branchRows)SpreadsheetApp.flush();return {keys,moved,renumbered:log.length,branchRows};}
+
 function isAdmin_(u){return u.grants.some(r=>r[2]==='管理員');}
 function itemMeta(){const db=db_(),u=identity_(db);if(!isAdmin_(u))throw Error('僅管理員可新品建檔');const s=db.getSheetById(251646983),c=masterCols_(s),v=rows_(s);const cats={},units={},items=[];
  v.forEach(r=>{const cc=String(r[c.cc]||'').trim().toUpperCase(),sku=String(r[c.sku]||'').trim();if(cc){const m=sku.match(/^([A-Z]{1,4})(\d+)$/);cats[cc]=cats[cc]||{code:cc,name:String(r[c.cat]||''),next:0,count:0};cats[cc].count++;if(m&&m[1]===cc)cats[cc].next=Math.max(cats[cc].next,Number(m[2]));}
