@@ -11,8 +11,10 @@ function ensureBranchRows_(sh,b,keys){const n=sh.getLastRow(),w=sh.getLastColumn
   if(f[2])sh.getRange(row,3).setFormula(f[2].replace(/id=RD[1-6]-\d+/,'id='+code));
   sh.getRange(row,9).setValue(k);});return miss.length;}
 function ensureItems_(){const db=db_(),s=db.getSheetById(251646983),c=masterCols_(s);if(c.key<0||c.name<0)return {keys:0,branchRows:0};let n=s.getLastRow();if(n<2)return {keys:0,branchRows:0};
- const filled=r=>String(r[c.name]).trim()&&(c.cc<0||String(r[c.cc]).trim())&&String(r[c.unit]).trim();
- let v=s.getRange(2,1,n-1,c.w).getValues();let maxKey=0;v.forEach(r=>{maxKey=Math.max(maxKey,keyNum_(r[c.key]));});
+ const filled=r=>String(r[c.name]).trim()&&(c.cc<0||String(r[c.cc]).trim());
+ let v=s.getRange(2,1,n-1,c.w).getValues();
+ // 0 分類代碼空白時，依同一「分類」名稱的其他品項自動補上
+ if(c.cc>=0&&c.cat>=0){const map={};v.forEach(r=>{const cc=String(r[c.cc]).trim().toUpperCase(),cat=String(r[c.cat]).trim();if(cc&&cat&&!(cat in map))map[cat]=cc;});v.forEach((r,i)=>{const cat=String(r[c.cat]).trim();if(String(r[c.name]).trim()&&!String(r[c.cc]).trim()&&map[cat]){r[c.cc]=map[cat];s.getRange(i+2,c.cc+1).setValue(map[cat]);}});}let maxKey=0;v.forEach(r=>{maxKey=Math.max(maxKey,keyNum_(r[c.key]));});
  // 1 共用品號：補缺號、修正複製造成的重複號
  const seen={};let keys=0;v.forEach((r,i)=>{if(!filled(r))return;let k=String(r[c.key]).trim();if(k&&!seen[k]){seen[k]=1;return;}maxKey++;k=KEY_PREFIX_+String(maxKey).padStart(4,'0');seen[k]=1;s.getRange(i+2,c.key+1).setValue(k);r[c.key]=k;keys++;});
  // 2 依分類代碼歸位（同分類維持原先後順序；用移動整列，不破壞公式與圖片）
