@@ -15,5 +15,5 @@ const items=[];brows.forEach(r=>{const code=r[8];if(code===''||code==null||seen[
  const legacy=String(r[0]).split('|')[0].trim();
  items.push({code,sku:modern?mr[skuCol]:mr[keyCol],legacy,category:modern?mr[catCol]:'',common:code,name:mr[nameCol],unit:mr[unitCol]||'',image:pic(i),location:r[4]||'',balance,
   countState:{week:week.id,latest:lr?{id:lr[0],quantity:lr[8],unit:lr[12],employee:lr[25]||lr[3],time:new Date(recordTime_(lr)).toISOString(),returned:!!ret[lr[0]],approved:!!appr[lr[0]]}:null},
-  keys:[code,/^(RD[1-6]-|KYX-)/.test(legacy)&&seen[legacy]===1?legacy:null,modern&&cnt[mr[skuCol]]===1&&!/^(RD[1-6]-|KYX-)/.test(String(mr[skuCol]))?mr[skuCol]:null].filter(k=>k!==''&&k!=null).map(String)});});
+  keys:[code,/^(RD[1-6]-|RD-|KYX-)/.test(legacy)&&seen[legacy]===1?legacy:null,modern&&cnt[mr[skuCol]]===1&&!/^(RD[1-6]-|RD-|KYX-)/.test(String(mr[skuCol]))?mr[skuCol]:null].filter(k=>k!==''&&k!=null).map(String)});});
 return {branch:b,week:week.id,at:Date.now(),items};}

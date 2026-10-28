@@ -112,7 +112,7 @@
   function idbPut(k, v) { return idb().then(function (d) { if (!d) return; try { d.transaction('catalog', 'readwrite').objectStore('catalog').put(v, k); } catch (e) {} }); }
   function idbClear() { return idb().then(function (d) { if (!d) return; try { d.transaction('catalog', 'readwrite').objectStore('catalog').clear(); } catch (e) {} }); }
   function indexCat(c) { var m = {}, dup = {}; (c.items || []).forEach(function (it, i) { (it.keys || []).forEach(function (k) { if (k in m && m[k] !== i) dup[k] = 1; m[k] = i; }); }); Object.keys(dup).forEach(function (k) { delete m[k]; }); c.map = m; return c; }
-  function catKey(b) { return (tokenEmail() || '') + '|' + b; }
+  function catKey(b) { return 'v2|' + (tokenEmail() || '') + '|' + b; }
   function loadCat(b, force) {
     if (!/^RD[1-6]$/.test(b)) return;
     var mem = cats[b];

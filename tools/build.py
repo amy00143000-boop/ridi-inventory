@@ -70,4 +70,7 @@ o = (out/'tools'/'ops.src.html').read_text() if (out/'tools'/'ops.src.html').exi
 o = must(o, '<!--HEAD-->', "<script>try{history.replaceState(null,'','./'+location.search+location.hash)}catch(e){}</script>" + HEAD.replace('#18394A', '#111111'))
 o = o.replace('src="scanner.js"', 'src="scanner.js?v=' + __import__('time').strftime('%Y%m%d%H%M') + '"')
 (out/'ops.html').write_text(o)
+it = (pathlib.Path(__file__).parent/'item.src.html').read_text()
+it = must(it, '<!--HEAD-->', HEAD.replace('#18394A', '#111111'))
+(out/'item.html').write_text(it)
 print('ok', len(p), len(l), len(o))

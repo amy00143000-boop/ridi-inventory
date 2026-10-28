@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>日帝汽車｜新品建檔</title>
+<!--HEAD-->
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#f5f5f5}
+body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Segoe UI",sans-serif;color:#111}
+button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;background:#f0f0f0;color:#111;min-height:44px;padding:0 14px}
+button:disabled{opacity:.45}[hidden]{display:none!important}
+header{background:#111;color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px}
+header a{color:#fff;text-decoration:none;font-size:24px;width:32px}header h1{margin:0;font-size:17px}header small{display:block;color:#d4d4d4;font-size:12px}
+main{max-width:520px;margin:auto;padding:14px 16px 120px}
+.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 6px}label:first-child{margin-top:0}
+input,select{width:100%;min-height:46px;border:1px solid #d4d4d4;border-radius:10px;padding:0 12px;font-size:16px;background:#fff}
+input:focus,select:focus{outline:2px solid #FACC15;border-color:#111}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+.hint{font-size:12px;color:#525252;margin:6px 0 0}
+.warn{background:#FEF3C7;border-radius:10px;padding:10px 12px;font-size:14px;margin-top:8px}
+.warn b{display:block;margin-bottom:4px}.warn div{padding:2px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chips button{min-height:34px;font-size:14px;padding:0 12px}.chips .on{background:#111;color:#FACC15;font-weight:700}
+#photoBox{display:flex;gap:12px;align-items:center}#photoPrev{width:96px;height:96px;border-radius:12px;background:#e5e5e5;object-fit:cover;flex-shrink:0}
+.pick{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:#111;color:#FACC15;font-weight:700;border-radius:10px;min-height:44px;padding:0 16px}
+.pick input{position:absolute;inset:0;opacity:0}
+footer{position:fixed;left:0;right:0;bottom:0;background:#fff;padding:10px 16px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+#save{display:block;width:100%;max-width:488px;margin:auto;min-height:54px;background:#111;color:#FACC15;font-size:18px;font-weight:700;border-radius:14px}
+#save:disabled{background:#e5e5e5;color:#737373;opacity:1}
+.toast{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:calc(100% - 28px);max-width:480px;background:#B91C1C;color:#fff;font-weight:700;font-size:14px;padding:10px 14px;border-radius:12px;z-index:50;white-space:pre-wrap}
+.done{text-align:center}.done h2{margin:6px 0}.labels{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.lab{border:2px solid #111;border-radius:10px;padding:8px;text-align:center;background:#fff}.lab img{width:100%;aspect-ratio:1;display:block}.lab b{display:block;font-size:15px}.lab span{display:block;font-size:12px;color:#404040;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media print{header,footer,.noprint,.toast{display:none!important}body,main{background:#fff;padding:0}.card{padding:0}.labels{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header><a id="back" href="ops.html" aria-label="返回">‹</a><div><h1>新品建檔</h1><small id="who">讀取中…</small></div></header>
+<main>
+<section id="form">
+  <div class="card">
+    <label for="cat">分類</label>
+    <select id="cat"></select>
+    <div id="newCat" hidden class="row" style="margin-top:8px"><input id="ncCode" placeholder="代碼，例如 VL" maxlength="4" autocapitalize="characters"><input id="ncName" placeholder="分類名稱，例如 閥類"></div>
+    <label for="sku">料號</label>
+    <input id="sku" autocomplete="off" autocapitalize="characters">
+    <p class="hint">已自動帶入下一個流水號，可修改。共用品號（RD-xxxx）由系統自動編。</p>
+    <label for="name">品名規格</label>
+    <input id="name" autocomplete="off" placeholder="例如 扇形氣動蝶閥 FC/304 3&quot;">
+    <div id="dup" class="warn" hidden></div>
+    <label for="unit">單位</label>
+    <input id="unit" autocomplete="off" placeholder="例如 個、支、台">
+    <div class="chips" id="units"></div>
+  </div>
+  <div class="card">
+    <label>商品照片</label>
+    <div id="photoBox"><img id="photoPrev" alt="商品照片預覽"><div><span class="pick">拍照／選照片<input id="photo" type="file" accept="image/*" capture="environment" aria-label="拍照或選擇商品照片"></span><p class="hint">照片會壓縮後存入主檔，掃碼時顯示。</p></div></div>
+  </div>
+  <div class="card">
+    <label for="branch">本廠儲位與安全庫存（選填）</label>
+    <select id="branch"></select>
+    <div class="row" style="margin-top:8px"><input id="area" placeholder="儲位，例如 A-03"><input id="safety" inputmode="numeric" placeholder="安全庫存"></div>
+    <p class="hint">建檔後六個廠的庫存表都會自動加入這一項，其他廠的儲位可之後再填。</p>
+  </div>
+</section>
+<section id="result" hidden class="card done">
+  <h2>建檔完成</h2>
+  <div id="resInfo"></div>
+  <div class="labels" id="labels"></div>
+  <div class="row noprint" style="margin-top:14px"><button id="print" type="button">列印標籤</button><button id="again" type="button" style="background:#111;color:#FACC15;font-weight:700">再建一項</button></div>
+</section>
+<div id="account" class="noprint" style="margin-top:8px"></div>
+</main>
+<footer class="noprint"><button id="save" type="button" disabled>建立新品</button></footer>
+<div id="toast" class="toast" hidden role="alert"></div>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var NAMES={RD1:'新北總廠',RD2:'竹北',RD3:'台中',RD4:'嘉義',RD5:'台南',RD6:'高雄'};
+var meta=null,photo='',busy=false,force=false;
+function rpc(fn){var a=[].slice.call(arguments,1);return new Promise(function(ok,no){google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn].apply(null,a);});}
+function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){t.hidden=true},6000);}
+function norm(s){return String(s||'').toLowerCase().replace(/[\s\-_.,()（）"'″”“×x*\/]/g,'');}
+function grams(s){var g={};for(var i=0;i<s.length-1;i++)g[s.substr(i,2)]=1;return g;}
+function sim(a,b){if(!a||!b)return 0;if(a===b)return 1;var A=grams(a),B=grams(b),n=0,t=0,k;for(k in A){t++;if(B[k])n++;}for(k in B)if(!A[k])t++;return t?n/t:0;}
+function cur(){if(!meta)return {code:'',name:''};var v=$('cat').value;if(v==='__new')return {code:$('ncCode').value.trim().toUpperCase(),name:$('ncName').value.trim()};var c=meta.categories.filter(function(x){return x.code===v})[0];return c?{code:c.code,name:c.name}:{code:'',name:''};}
+function check(){
+  if(!meta)return;var n=norm($('name').value),box=$('dup');box.replaceChildren();force=false;
+  if(n.length>=3){var hits=meta.items.map(function(it){return {it:it,s:sim(n,norm(it.name))}}).filter(function(x){return x.s>=0.55}).sort(function(a,b){return b.s-a.s}).slice(0,4);
+    if(hits.length){var b=document.createElement('b');b.textContent=hits[0].s===1?'已有完全相同的品名：':'可能已存在（請確認不是同一項）：';box.appendChild(b);
+      hits.forEach(function(h){var d=document.createElement('div');d.textContent=h.it.sku+'　'+h.it.name;box.appendChild(d);});
+      var l=document.createElement('label');l.style.cssText='display:flex;gap:8px;align-items:center;font-weight:400;margin:8px 0 0';var c=document.createElement('input');c.type='checkbox';c.style.cssText='width:22px;min-height:22px';c.onchange=function(){force=c.checked;state();};l.append(c,document.createTextNode('確認不是同一項，仍要新增'));box.appendChild(l);box.hidden=false;state();return;}}
+  box.hidden=true;state();}
+function state(){var c=cur(),why='';if(!$('name').value.trim())why='請填品名規格';else if(!/^[A-Z]{1,4}$/.test(c.code))why='請選擇分類';else if(!$('unit').value.trim())why='請填單位';else if(!$('dup').hidden&&!force)why='請確認是否重複';
+  $('save').disabled=!!why||busy;$('save').textContent=busy?'建檔中…':why||'建立新品';}
+$('cat').onchange=function(){var v=$('cat').value;$('newCat').hidden=v!=='__new';var c=meta.categories.filter(function(x){return x.code===v})[0];$('sku').value=c?c.nextSku:'';state();};
+$('ncCode').oninput=function(){var p=$('ncCode').value.trim().toUpperCase();$('sku').value=/^[A-Z]{1,4}$/.test(p)?p+'0001':'';state();};
+$('ncName').oninput=state;$('unit').oninput=state;$('sku').oninput=state;
+var nt=null;$('name').oninput=function(){clearTimeout(nt);nt=setTimeout(check,250);state();};
+$('photo').onchange=function(){var f=$('photo').files[0];if(!f)return;var url=URL.createObjectURL(f),img=new Image();img.onload=function(){var s=Math.min(1,320/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);var q=0.75;photo=c.toDataURL('image/jpeg',q);while(photo.length>100000&&q>0.3){q-=0.1;photo=c.toDataURL('image/jpeg',q);}$('photoPrev').src=photo;URL.revokeObjectURL(url);};img.onerror=function(){toast('無法讀取這張照片，請改用 JPEG 或重拍');};img.src=url;};
+$('save').onclick=function(){if(busy)return;var c=cur();busy=true;state();
+  rpc('createItem',{catCode:c.code,catName:c.name,sku:$('sku').value.trim().toUpperCase(),name:$('name').value.trim(),unit:$('unit').value.trim(),photo:photo,branch:$('branch').value,area:$('area').value.trim(),safety:$('safety').value.trim(),force:force}).then(function(r){
+    $('form').hidden=true;document.querySelector('footer').hidden=true;$('result').hidden=false;
+    $('resInfo').textContent=r.sku+'　'+r.name+'　（'+r.unit+'）　共用品號 '+r.key;
+    var L=$('labels');L.replaceChildren();Object.keys(r.codes).sort().forEach(function(b){var d=document.createElement('div');d.className='lab';var im=document.createElement('img');im.alt=r.codes[b]+' 二維碼';im.src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=4&data='+encodeURIComponent(r.codes[b]);var x=document.createElement('b');x.textContent=r.codes[b];var y=document.createElement('span');y.textContent=r.name;var z=document.createElement('span');z.textContent=NAMES[b]+'　'+r.sku;d.append(im,x,y,z);L.appendChild(d);});
+    meta.items.push({sku:r.sku,name:r.name,key:r.key});
+  },function(e){toast((e&&e.message)||'建檔失敗');}).then(function(){busy=false;state();});};
+$('print').onclick=function(){window.print();};
+$('again').onclick=function(){$('result').hidden=true;$('form').hidden=false;document.querySelector('footer').hidden=false;$('name').value='';$('area').value='';$('safety').value='';photo='';$('photoPrev').removeAttribute('src');$('dup').hidden=true;
+  rpc('itemMeta').then(function(m){meta=m;var v=$('cat').value;fillCats(v);});};
+function fillCats(keep){var s=$('cat');s.replaceChildren(new Option('請選擇分類',''));meta.categories.forEach(function(c){s.add(new Option(c.code+'　'+c.name+'（'+c.count+' 項）',c.code));});s.add(new Option('＋ 新增分類','__new'));s.value=keep||'';s.onchange();}
+google.script.url.getLocation(function(loc){var q=loc.parameter||{};
+  Promise.all([rpc('bootstrap'),rpc('itemMeta')]).then(function(x){var a=x[0];meta=x[1];
+    $('who').textContent=a.email;var bs=a.grants.filter(function(g){return g.role==='管理員'}).map(function(g){return g.branch});
+    var s=$('branch');bs.forEach(function(b){s.add(new Option(NAMES[b]+' '+b,b));});s.value=bs.indexOf(q.branch)>=0?q.branch:bs[0]||'';
+    $('back').href='ops.html'+(q.branch?'?branch='+encodeURIComponent(q.branch):'');
+    var U=$('units');meta.units.slice(0,8).forEach(function(u){var b=document.createElement('button');b.type='button';b.textContent=u;b.onclick=function(){$('unit').value=u;[].forEach.call(U.children,function(k){k.className=k===b?'on':''});state();};U.appendChild(b);});
+    fillCats('');
+  },function(e){$('who').textContent=(e&&e.message)||'讀取失敗';toast((e&&e.message)||'讀取失敗');});
+});
+state();
+})();
+</script>
+</body>
+</html>

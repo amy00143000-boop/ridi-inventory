@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>日帝汽車｜入庫調撥</title>
-<script>try{history.replaceState(null,'','./'+location.search+location.hash)}catch(e){}</script><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#111111"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><script src="https://accounts.google.com/gsi/client" async></script><script src="config.js?v=202610281007"></script><script src="shim.js?v=202610281007"></script>
+<script>try{history.replaceState(null,'','./'+location.search+location.hash)}catch(e){}</script><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#111111"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><script src="https://accounts.google.com/gsi/client" async></script><script src="config.js?v=202610281033"></script><script src="shim.js?v=202610281033"></script>
 <style>
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Segoe UI",sans-serif;color:#111;background:#fff}
@@ -69,7 +69,7 @@ footer{padding:8px 14px calc(10px + env(safe-area-inset-bottom));flex-shrink:0}
 <body>
 <div id="app">
 <header>
-  <div class="top"><button id="ctx" type="button">讀取中…</button><div class="links"><button id="ovBtn" type="button">總覽</button><button id="moreBtn" type="button">主管作業</button></div></div>
+  <div class="top"><button id="ctx" type="button">讀取中…</button><div class="links"><button id="ovBtn" type="button">總覽</button><button id="newBtn" type="button" hidden>新品建檔</button><button id="moreBtn" type="button">主管作業</button></div></div>
   <div class="tabs"><button id="tIn" type="button">入庫</button><a id="tCount" href="./">盤點</a><button id="tOut" type="button">調撥</button></div>
 </header>
 
@@ -98,7 +98,7 @@ footer{padding:8px 14px calc(10px + env(safe-area-inset-bottom));flex-shrink:0}
 <div id="cfPanel" class="overlay" hidden><div class="sheet"><h2 id="cfTitle">確認送出</h2><div id="cfBody"></div><button id="cfOk" class="pri" type="button">確認送出</button><button id="cfCancel" class="sec" type="button">返回修改</button></div></div>
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
-<script src="scanner.js?v=202610281007"></script>
+<script src="scanner.js?v=202610281033"></script>
 <script>
 (function(){
 'use strict';
@@ -180,6 +180,7 @@ $('po').oninput=function(){draft.in.po=$('po').value;save();render();};
 $('poNew').onclick=function(){draft.in.po=newPo();save();render();};
 $('tIn').onclick=function(){mode='in';last={code:'',seen:0};sel=draft.in.lines.length-1;history.replaceState(null,'','./?type='+encodeURIComponent('入庫')+'&branch='+branch);render();};
 $('tOut').onclick=function(){mode='out';last={code:'',seen:0};sel=draft.out.lines.length-1;history.replaceState(null,'','./?type='+encodeURIComponent('調撥出貨')+'&branch='+branch);render();};
+$('newBtn').onclick=function(){location.href='item.html?branch='+encodeURIComponent(branch);};
 $('moreBtn').onclick=function(){location.href='legacy.html?branch='+encodeURIComponent(branch)+(emp?'&employee='+encodeURIComponent(emp):'');};
 
 /* ---- 送出 ---- */
@@ -267,7 +268,7 @@ function act(g,type,btn){
 /* ---- 啟動 ---- */
 google.script.url.getLocation(function(loc){
   var q=loc.parameter||{};mode=/調撥/.test(q.type||'')?'out':'in';
-  rpc('bootstrap').then(function(a){auth=a;if(!a.branches.length)throw Error('沒有分廠權限');
+  rpc('bootstrap').then(function(a){auth=a;$('newBtn').hidden=!a.grants.some(function(g){return g.role==='管理員'});if(!a.branches.length)throw Error('沒有分廠權限');
     var s=$('selBranch');a.branches.forEach(function(b){s.add(new Option((NAMES[b]||b)+' '+b,b));});
     var c=store('ridi_ctx')||{},b=a.branches.indexOf(q.branch)>=0?q.branch:a.branches.indexOf(c.branch)>=0?c.branch:a.branches[0];
     var want=q.employee||c.employee||'',rows=a.employees.filter(function(e){return e.branch===b});
