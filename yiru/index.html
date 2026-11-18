@@ -56,6 +56,38 @@ window.addEventListener('message', function(e){
 });
 document.getElementById('ftGo').addEventListener('click', function(){ setTimeout(function(){ document.getElementById('ft').classList.remove('on'); }, 800); });
 
+
+// 天氣：定位在外層頁做（Google 內框不能定位），查好再傳給兒童版
+var SCHOOL = { lat: 25.0589, lon: 121.4317 }; // 新北市泰山區
+function wxGet(lat, lon){
+  return fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+    '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTaipei&forecast_days=2')
+    .then(function(r){ return r.json(); });
+}
+function wxDay(j, i, label){
+  return { code: j.daily.weather_code[i], max: j.daily.temperature_2m_max[i], min: j.daily.temperature_2m_min[i], pop: j.daily.precipitation_probability_max[i], day: label };
+}
+function wxPos(){
+  return new Promise(function(ok){
+    if (!navigator.geolocation) return ok(null);
+    navigator.geolocation.getCurrentPosition(function(p){ ok({ lat: p.coords.latitude, lon: p.coords.longitude }); }, function(){ ok(null); }, { timeout: 10000, maximumAge: 1800000 });
+  });
+}
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type !== 'wxReq' || !e.source) return;
+  var src = e.source;
+  wxPos().then(function(pos){
+    var here = pos || SCHOOL;
+    return Promise.all([wxGet(here.lat.toFixed(3), here.lon.toFixed(3)), wxGet(SCHOOL.lat, SCHOOL.lon)]).then(function(a){
+      var h = wxDay(a[0], 0, '現在'); h.t = a[0].current.temperature_2m; h.code = a[0].current.weather_code; h.place = pos ? '我家附近' : '泰山';
+      var night = new Date().getHours() >= 18;
+      var s = wxDay(a[1], night ? 1 : 0, night ? '明天' : '今天');
+      src.postMessage({ type: 'wx', here: h, school: s, geo: !!pos }, '*');
+    });
+  }).catch(function(){});
+});
+
 var S = { stream: null, sending: false, starting: false, failUntil: 0 };
 var v = document.getElementById('v'), cv = document.getElementById('c');
 function show(id, on){ document.getElementById(id).classList.toggle('on', !!on); }
@@ -64,6 +96,7 @@ function post(o){
     .then(function(r){ return r.json(); });
 }
 function stop(){
+  rtcStop();
   if (S.stream) S.stream.getTracks().forEach(function(t){ t.stop(); });
   S.stream = null; show('badge', false);
 }
@@ -79,15 +112,14 @@ function shot(){
     .catch(function(){ S.sending = false; });
 }
 function start(){
-  if (S.stream) { shot(); return; }
+  if (S.stream) return;
   if (S.starting || Date.now() < S.failUntil) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { post({ api: 'campush', err: '外層頁：瀏覽器不支援鏡頭 | ' + navigator.userAgent.slice(0, 80) }); return; }
   S.starting = true;
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
     .then(function(s){
       S.starting = false; S.stream = s; v.srcObject = s; v.play();
       show('badge', true); show('ask', false);
-      setTimeout(shot, 1200);
     })
     .catch(function(e){
       S.starting = false; S.failUntil = Date.now() + 60000; show('ask', true);
@@ -95,17 +127,39 @@ function start(){
     });
 }
 document.getElementById('ask').onclick = function(){ show('ask', false); S.failUntil = 0; S.starting = false; start(); };
+/* ---------- 即時影像（WebRTC，單向：iPad → 家長） ---------- */
+var R = { sid: '', pc: null, t: 0 };
+function rtcStop(){ if (R.pc) { try { R.pc.close(); } catch(e) {} } R.pc = null; R.sid = ''; clearInterval(R.t); }
+function rtcIce(pc){ return new Promise(function(ok){ if (pc.iceGatheringState === 'complete') return ok(); var t = setTimeout(ok, 2500); pc.addEventListener('icegatheringstatechange', function(){ if (pc.iceGatheringState === 'complete') { clearTimeout(t); ok(); } }); }); }
+function rtcStart(sid){
+  rtcStop(); R.sid = sid;
+  var pc = new RTCPeerConnection({ iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] });
+  R.pc = pc;
+  S.stream.getTracks().forEach(function(t){ pc.addTrack(t, S.stream); });
+  pc.createOffer().then(function(o){ return pc.setLocalDescription(o); }).then(function(){ return rtcIce(pc); }).then(function(){
+    if (R.pc !== pc) return;
+    post({ api: 'rtcoffer', sid: sid, sdp: pc.localDescription.sdp });
+    var n = 0;
+    R.t = setInterval(function(){
+      if (R.pc !== pc || ++n > 90) { clearInterval(R.t); return; }
+      fetch(API + '?api=rtcans&sid=' + encodeURIComponent(sid)).then(function(r){ return r.json(); }).then(function(r){
+        if (r && r.sdp && R.pc === pc && !pc.remoteDescription) { clearInterval(R.t); pc.setRemoteDescription({ type: 'answer', sdp: r.sdp }); }
+      }).catch(function(){});
+    }, 1000);
+  }).catch(function(e){ post({ api: 'campush', err: '即時影像失敗：' + e }); });
+}
 function poll(){
-  if (S.stream) { shot(); return; }
   fetch(API + '?api=campoll&info=' + encodeURIComponent('外層頁 ' + navigator.userAgent.slice(0, 90)))
     .then(function(r){ return r.json(); })
     .then(function(r){
-      if (r && r.req) { if (Date.now() < S.failUntil) show('ask', true); else start(); }
-      else { show('ask', false); }
+      if (r && r.req) {
+        if (!S.stream) { if (Date.now() < S.failUntil) show('ask', true); else start(); }
+        else if (r.rtc && r.rtc !== R.sid) rtcStart(r.rtc);
+      } else { show('ask', false); if (S.stream) stop(); else rtcStop(); }
     })
     .catch(function(){});
 }
-setInterval(poll, 4000);
+setInterval(poll, 2500);
 document.addEventListener('visibilitychange', function(){ if (document.hidden) stop(); });
 </script>
 </body>
