@@ -69,8 +69,15 @@ function wxDay(j, i, label){
 }
 function wxPos(){
   return new Promise(function(ok){
-    if (!navigator.geolocation) return ok(null);
-    navigator.geolocation.getCurrentPosition(function(p){ ok({ lat: p.coords.latitude, lon: p.coords.longitude }); }, function(){ ok(null); }, { timeout: 10000, maximumAge: 1800000 });
+    var last = null; try { last = JSON.parse(localStorage.getItem('yiruPos') || 'null'); } catch(e) {}
+    if (!navigator.geolocation) return ok(last);
+    var done = false, fin = function(v){ if (!done) { done = true; ok(v); } };
+    setTimeout(function(){ fin(last); }, 6000);
+    navigator.geolocation.getCurrentPosition(function(p){
+      var v = { lat: p.coords.latitude, lon: p.coords.longitude };
+      try { localStorage.setItem('yiruPos', JSON.stringify(v)); } catch(e) {}
+      fin(v);
+    }, function(){ fin(last); }, { timeout: 10000, maximumAge: 1800000 });
   });
 }
 window.addEventListener('message', function(e){
