@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+<title>岑岑寶貝的星星存錢筒</title>
+<style>
+html,body{margin:0;height:100%;background:#FFE3EE;overflow:hidden}
+#app{position:fixed;inset:0;width:100%;height:100%;border:0}
+.badge,.ask{position:fixed;left:50%;transform:translateX(-50%);z-index:9;display:none;align-items:center;gap:10px;border-radius:999px;font:900 22px/1.6 "PingFang TC","Noto Sans TC",sans-serif;box-shadow:0 6px 0 rgba(0,0,0,.15)}
+.badge{top:10px;background:#fff;color:#5A3A4A;border:4px solid #FF7AA8;padding:4px 18px}
+.ask{bottom:24px;background:#3C86CC;color:#fff;border:0;padding:12px 26px;cursor:pointer}
+.on{display:flex}
+.dot{width:14px;height:14px;border-radius:50%;background:#FF4D6D;animation:b 1s infinite}
+@keyframes b{50%{transform:scale(1.4)}}
+ruby rt{font-size:.42em;font-weight:700;color:#7A5C70}
+video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<iframe id="app" title="岑岑寶貝的星星存錢筒"></iframe>
+<div class="badge" id="badge"><span class="dot"></span><span id="badgeTxt"></span></div>
+<button class="ask" id="ask" type="button"><span class="dot"></span><span id="askTxt"></span></button>
+<video id="v" playsinline muted autoplay></video>
+<canvas id="c" hidden></canvas>
+<script>
+// Apps Script 兒童版網址（部署後不變）
+var API = 'https://script.google.com/macros/s/AKfycbwkb2SZSL8ij9M_YD1MoMV8jjiKh354q5P9H7Ff_9OqT5pLJZ_1d-e0M2M402YJQq-YWg/exec';
+document.getElementById('app').src = API + '?wrap=1';
+
+// 注音（只用到這兩句的字）
+var ZY = {'爸':'ㄅㄚˋ','媽':'ㄇㄚ','正':'ㄓㄥˋ','在':'ㄗㄞˋ','看':'ㄎㄢˋ','你':'ㄋㄧˇ','喔':'ㄛ','想':'ㄒㄧㄤˇ','按':'ㄢˋ','這':'ㄓㄜˋ','裡':'ㄌㄧˇ','打':'ㄉㄚˇ','開':'ㄎㄞ','鏡':'ㄐㄧㄥˋ','頭':'ㄊㄡˊ'};
+function z(t){ return Array.from(t).map(function(ch){ return ZY[ch] ? '<ruby>' + ch + '<rt>' + ZY[ch] + '</rt></ruby>' : ch; }).join(''); }
+document.getElementById('badgeTxt').innerHTML = z('爸爸媽媽正在看你喔！');
+document.getElementById('askTxt').innerHTML = z('爸爸媽媽想看看你，按這裡打開鏡頭');
+
+var S = { stream: null, sending: false, starting: false, failUntil: 0 };
+var v = document.getElementById('v'), cv = document.getElementById('c');
+function show(id, on){ document.getElementById(id).classList.toggle('on', !!on); }
+function post(o){
+  return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(o) })
+    .then(function(r){ return r.json(); });
+}
+function stop(){
+  if (S.stream) S.stream.getTracks().forEach(function(t){ t.stop(); });
+  S.stream = null; show('badge', false);
+}
+function shot(){
+  if (!S.stream || S.sending || !v.videoWidth) return;
+  var w = 320, h = Math.round(320 * v.videoHeight / v.videoWidth) || 240;
+  cv.width = w; cv.height = h;
+  cv.getContext('2d').drawImage(v, 0, 0, w, h);
+  var q = 0.6, img = cv.toDataURL('image/jpeg', q);
+  while (img.length > 90000 && q > 0.2) { q -= 0.15; img = cv.toDataURL('image/jpeg', q); }
+  S.sending = true;
+  post({ api: 'campush', img: img }).then(function(r){ S.sending = false; if (!r.req) stop(); })
+    .catch(function(){ S.sending = false; });
+}
+function start(){
+  if (S.stream) { shot(); return; }
+  if (S.starting || Date.now() < S.failUntil) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { post({ api: 'campush', err: '外層頁：瀏覽器不支援鏡頭 | ' + navigator.userAgent.slice(0, 80) }); return; }
+  S.starting = true;
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
+    .then(function(s){
+      S.starting = false; S.stream = s; v.srcObject = s; v.play();
+      show('badge', true); show('ask', false);
+      setTimeout(shot, 1200);
+    })
+    .catch(function(e){
+      S.starting = false; S.failUntil = Date.now() + 60000; show('ask', true);
+      post({ api: 'campush', err: '外層頁鏡頭開不起來：' + (e && (e.name + ' ' + e.message) || e) + ' | ' + navigator.userAgent.slice(0, 80) });
+    });
+}
+document.getElementById('ask').onclick = function(){ show('ask', false); S.failUntil = 0; S.starting = false; start(); };
+function poll(){
+  if (S.stream) { shot(); return; }
+  fetch(API + '?api=campoll&info=' + encodeURIComponent('外層頁 ' + navigator.userAgent.slice(0, 90)))
+    .then(function(r){ return r.json(); })
+    .then(function(r){
+      if (r && r.req) { if (Date.now() < S.failUntil) show('ask', true); else start(); }
+      else { show('ask', false); }
+    })
+    .catch(function(){});
+}
+setInterval(poll, 4000);
+document.addEventListener('visibilitychange', function(){ if (document.hidden) stop(); });
+</script>
+</body>
+</html>
