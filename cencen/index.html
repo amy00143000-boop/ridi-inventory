@@ -126,7 +126,7 @@ function start(){
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
     .then(function(s){
       S.starting = false; S.stream = s; v.srcObject = s; v.play();
-      show('badge', true); show('ask', false);
+      show('ask', false);
     })
     .catch(function(e){
       S.starting = false; S.failUntil = Date.now() + 60000; show('ask', true);
