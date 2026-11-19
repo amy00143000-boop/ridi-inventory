@@ -16,6 +16,11 @@ html,body{margin:0;height:100%;background:#FFE3EE;overflow:hidden}
 .dot{width:14px;height:14px;border-radius:50%;background:#FF4D6D;animation:b 1s infinite}
 @keyframes b{50%{transform:scale(1.4)}}
 ruby rt{font-size:.42em;font-weight:700;color:#7A5C70}
+#ft{position:fixed;inset:0;z-index:20;background:rgba(40,40,70,.55);display:none;align-items:center;justify-content:center}
+#ft.on{display:flex}
+#ftBox{background:#fff;border-radius:32px;padding:28px 34px;display:flex;flex-direction:column;align-items:center;gap:18px;font:900 26px/1.6 "PingFang TC","Noto Sans TC",sans-serif;color:#4A3A5A}
+#ftGo{display:flex;align-items:center;gap:14px;padding:20px 40px;border-radius:999px;background:linear-gradient(135deg,#4CD07A,#2FB060);color:#fff;text-decoration:none;font-size:34px;box-shadow:0 8px 0 #1E8A48}
+#ftNo{border:0;background:#EEE;border-radius:999px;padding:10px 30px;font:inherit;font-size:22px;color:#666}
 video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
 </style>
 </head>
@@ -23,6 +28,7 @@ video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
 <iframe id="app" title="岑岑寶貝的星星存錢筒"></iframe>
 <div class="badge" id="badge"><span class="dot"></span><span id="badgeTxt"></span></div>
 <button class="ask" id="ask" type="button"><span class="dot"></span><span id="askTxt"></span></button>
+<div id="ft"><div id="ftBox"><div id="ftTip"></div><a id="ftGo" href="#"><span style="font-size:46px">📹</span><span id="ftTxt"></span></a><button id="ftNo" type="button"></button></div></div>
 <video id="v" playsinline muted autoplay></video>
 <canvas id="c" hidden></canvas>
 <script>
@@ -31,10 +37,63 @@ var API = 'https://script.google.com/macros/s/AKfycbwkb2SZSL8ij9M_YD1MoMV8jjiKh3
 document.getElementById('app').src = API + '?wrap=1';
 
 // 注音（只用到這兩句的字）
-var ZY = {'爸':'ㄅㄚˋ','媽':'ㄇㄚ','正':'ㄓㄥˋ','在':'ㄗㄞˋ','看':'ㄎㄢˋ','你':'ㄋㄧˇ','喔':'ㄛ','想':'ㄒㄧㄤˇ','按':'ㄢˋ','這':'ㄓㄜˋ','裡':'ㄌㄧˇ','打':'ㄉㄚˇ','開':'ㄎㄞ','鏡':'ㄐㄧㄥˋ','頭':'ㄊㄡˊ'};
+var ZY = {'爸':'ㄅㄚˋ','媽':'ㄇㄚ','正':'ㄓㄥˋ','在':'ㄗㄞˋ','看':'ㄎㄢˋ','你':'ㄋㄧˇ','喔':'ㄛ','想':'ㄒㄧㄤˇ','按':'ㄢˋ','這':'ㄓㄜˋ','裡':'ㄌㄧˇ','打':'ㄉㄚˇ','開':'ㄎㄞ','鏡':'ㄐㄧㄥˋ','頭':'ㄊㄡˊ','給':'ㄍㄟˇ','取':'ㄑㄩˇ','消':'ㄒㄧㄠ','下':'ㄒㄧㄚˋ','去':'ㄑㄩˋ'};
 function z(t){ return Array.from(t).map(function(ch){ return ZY[ch] ? '<ruby>' + ch + '<rt>' + ZY[ch] + '</rt></ruby>' : ch; }).join(''); }
 document.getElementById('badgeTxt').innerHTML = z('爸爸媽媽正在看你喔！');
 document.getElementById('askTxt').innerHTML = z('爸爸媽媽想看看你，按這裡打開鏡頭');
+
+// 兒童版按「打給爸媽」：在最外層開 FaceTime（Google 的內框不能直接開）
+document.getElementById('ftNo').innerHTML = z('取消');
+document.getElementById('ftNo').onclick = function(){ document.getElementById('ft').classList.remove('on'); };
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type !== 'ftCall' || !d.id) return;
+  var go = document.getElementById('ftGo');
+  go.href = 'facetime:' + encodeURI(String(d.id));
+  document.getElementById('ftTxt').innerHTML = z('打給' + (d.name || ''));
+  document.getElementById('ftTip').innerHTML = z('按下去') + ' 👇';
+  document.getElementById('ft').classList.add('on');
+});
+document.getElementById('ftGo').addEventListener('click', function(){ setTimeout(function(){ document.getElementById('ft').classList.remove('on'); }, 800); });
+
+
+// 天氣：定位在外層頁做（Google 內框不能定位），查好再傳給兒童版
+var SCHOOL = { lat: 25.0589, lon: 121.4317 }; // 新北市泰山區
+function wxGet(lat, lon){
+  return fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+    '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTaipei&forecast_days=2')
+    .then(function(r){ return r.json(); });
+}
+function wxDay(j, i, label){
+  return { code: j.daily.weather_code[i], max: j.daily.temperature_2m_max[i], min: j.daily.temperature_2m_min[i], pop: j.daily.precipitation_probability_max[i], day: label };
+}
+function wxPos(){
+  return new Promise(function(ok){
+    var last = null; try { last = JSON.parse(localStorage.getItem('cencenPos') || 'null'); } catch(e) {}
+    if (!navigator.geolocation) return ok(last);
+    var done = false, fin = function(v){ if (!done) { done = true; ok(v); } };
+    setTimeout(function(){ fin(last); }, 6000);
+    navigator.geolocation.getCurrentPosition(function(p){
+      var v = { lat: p.coords.latitude, lon: p.coords.longitude };
+      try { localStorage.setItem('cencenPos', JSON.stringify(v)); } catch(e) {}
+      fin(v);
+    }, function(){ fin(last); }, { timeout: 10000, maximumAge: 1800000 });
+  });
+}
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type !== 'wxReq' || !e.source) return;
+  var src = e.source;
+  wxPos().then(function(pos){
+    var here = pos || SCHOOL;
+    return Promise.all([wxGet(here.lat.toFixed(3), here.lon.toFixed(3)), wxGet(SCHOOL.lat, SCHOOL.lon)]).then(function(a){
+      var h = wxDay(a[0], 0, '現在'); h.t = a[0].current.temperature_2m; h.code = a[0].current.weather_code; h.place = pos ? '我家附近' : '泰山';
+      var night = new Date().getHours() >= 18;
+      var s = wxDay(a[1], night ? 1 : 0, night ? '明天' : '今天');
+      src.postMessage({ type: 'wx', here: h, school: s, geo: !!pos }, '*');
+    });
+  }).catch(function(){});
+});
 
 var S = { stream: null, sending: false, starting: false, failUntil: 0 };
 var v = document.getElementById('v'), cv = document.getElementById('c');
@@ -44,6 +103,7 @@ function post(o){
     .then(function(r){ return r.json(); });
 }
 function stop(){
+  rtcStop();
   if (S.stream) S.stream.getTracks().forEach(function(t){ t.stop(); });
   S.stream = null; show('badge', false);
 }
@@ -59,15 +119,14 @@ function shot(){
     .catch(function(){ S.sending = false; });
 }
 function start(){
-  if (S.stream) { shot(); return; }
+  if (S.stream) return;
   if (S.starting || Date.now() < S.failUntil) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { post({ api: 'campush', err: '外層頁：瀏覽器不支援鏡頭 | ' + navigator.userAgent.slice(0, 80) }); return; }
   S.starting = true;
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
     .then(function(s){
       S.starting = false; S.stream = s; v.srcObject = s; v.play();
       show('badge', true); show('ask', false);
-      setTimeout(shot, 1200);
     })
     .catch(function(e){
       S.starting = false; S.failUntil = Date.now() + 60000; show('ask', true);
@@ -75,18 +134,44 @@ function start(){
     });
 }
 document.getElementById('ask').onclick = function(){ show('ask', false); S.failUntil = 0; S.starting = false; start(); };
+/* ---------- 即時影像（WebRTC，單向：iPad → 家長） ---------- */
+var R = { sid: '', pc: null, t: 0 };
+function rtcStop(){ if (R.pc) { try { R.pc.close(); } catch(e) {} } R.pc = null; R.sid = ''; clearInterval(R.t); }
+function rtcIce(pc){ return new Promise(function(ok){ if (pc.iceGatheringState === 'complete') return ok(); var t = setTimeout(ok, 2500); pc.addEventListener('icegatheringstatechange', function(){ if (pc.iceGatheringState === 'complete') { clearTimeout(t); ok(); } }); }); }
+function rtcStart(sid){
+  rtcStop(); R.sid = sid;
+  var pc = new RTCPeerConnection({ iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] });
+  R.pc = pc;
+  S.stream.getTracks().forEach(function(t){ pc.addTrack(t, S.stream); });
+  pc.createOffer().then(function(o){ return pc.setLocalDescription(o); }).then(function(){ return rtcIce(pc); }).then(function(){
+    if (R.pc !== pc) return;
+    post({ api: 'rtcoffer', sid: sid, sdp: pc.localDescription.sdp });
+    var n = 0;
+    R.t = setInterval(function(){
+      if (R.pc !== pc || ++n > 90) { clearInterval(R.t); return; }
+      fetch(API + '?api=rtcans&sid=' + encodeURIComponent(sid)).then(function(r){ return r.json(); }).then(function(r){
+        if (r && r.sdp && R.pc === pc && !pc.remoteDescription) { clearInterval(R.t); pc.setRemoteDescription({ type: 'answer', sdp: r.sdp }); }
+      }).catch(function(){});
+    }, 1000);
+  }).catch(function(e){ post({ api: 'campush', err: '即時影像失敗：' + e }); });
+}
 function poll(){
-  if (S.stream) { shot(); return; }
   fetch(API + '?api=campoll&info=' + encodeURIComponent('外層頁 ' + navigator.userAgent.slice(0, 90)))
     .then(function(r){ return r.json(); })
     .then(function(r){
-      if (r && r.req) { if (Date.now() < S.failUntil) show('ask', true); else start(); }
-      else { show('ask', false); }
+      if (r && r.req) {
+        if (!S.stream) { if (Date.now() < S.failUntil) show('ask', true); else start(); }
+        else if (r.rtc && r.rtc !== R.sid) rtcStart(r.rtc);
+      } else { show('ask', false); if (S.stream) stop(); else rtcStop(); }
     })
     .catch(function(){});
 }
-setInterval(poll, 4000);
+setInterval(poll, 2500);
 document.addEventListener('visibilitychange', function(){ if (document.hidden) stop(); });
+// 平板計時中離開畫面：通知家長版（sendBeacon 在關掉畫面時也送得出去）
+function away(on){ try { navigator.sendBeacon(API, JSON.stringify({ api: 'away', on: !!on })); } catch(e) {} }
+document.addEventListener('visibilitychange', function(){ away(document.hidden); });
+window.addEventListener('pagehide', function(){ away(true); });
 </script>
 </body>
 </html>
