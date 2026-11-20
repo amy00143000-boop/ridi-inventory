@@ -55,72 +55,178 @@ canvas{touch-action:none;border-radius:22px;background:#fff}
 .start{max-width:720px;margin:0 auto;text-align:center}
 .start .big{font-size:26px;font-weight:900;margin:10px 0 18px}
 .mouthSvg{width:230px;height:170px}
+
+.zh{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .14em .06em 0;line-height:1}
+.zc{line-height:1;font-size:1.15em}
+.zy{display:inline-flex;align-items:center;margin-left:.06em;font-size:.42em;font-weight:800;color:var(--accD);letter-spacing:0}
+.zs{display:flex;flex-direction:column;align-items:center;line-height:1.02}
+.zt{align-self:flex-end;margin-left:.05em;margin-bottom:.3em;line-height:1}
+.zn0{line-height:.6}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:720px;margin:0 auto 10px}
+.set{font:inherit;font-size:15px;font-weight:800;border:3px solid var(--accT);background:#fff;color:var(--ink);border-radius:999px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.set input{width:100px}
+.cap{font-size:20px;font-weight:800;line-height:1.5;background:#FFF7FB;border-radius:18px;padding:8px 14px}
+.vid{position:relative;width:100%;aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:#222}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%}
+.cards button{font:inherit;font-size:76px;font-weight:900;background:#fff;border:5px solid var(--accT);border-radius:26px;cursor:pointer;color:var(--ink);padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.cards button small{font-size:18px}
+.mouths{display:grid;grid-template-columns:1fr;gap:10px;width:100%}
+.mouth{font:inherit;display:grid;grid-template-columns:70px 150px 1fr;align-items:center;gap:8px;background:#fff;border:4px solid var(--accT);border-radius:22px;padding:8px;text-align:left;cursor:pointer;color:var(--ink);font-size:18px;font-weight:800}
+.mouth b{font-size:56px;text-align:center}
+.mouth .mouthSvg{width:150px;height:110px}
+.pics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%}
+.pics button{font:inherit;font-size:20px;font-weight:900;background:#fff;border:5px solid var(--accT);border-radius:24px;cursor:pointer;color:var(--ink);padding:10px 4px;display:flex;flex-direction:column;align-items:center}
+.pics button span.p{font-size:64px}
+.ping{animation:ping .6s}@keyframes ping{50%{transform:scale(1.08);background:#FFF3C4}}
+.noanim *{animation:none!important;transition:none!important}
+.tabs{display:flex;gap:8px;justify-content:center}
+.tabs button{font:inherit;font-size:30px;font-weight:900;width:64px;height:64px;border-radius:18px;border:4px solid var(--accT);background:#fff;cursor:pointer;color:var(--ink)}
+.tabs button.on{border-color:var(--acc);background:var(--accT)}
+@media (max-width:600px){.cards,.pics{grid-template-columns:1fr 1fr}.mouth{grid-template-columns:56px 110px 1fr}.mouth .mouthSvg{width:110px;height:82px}}
 </style>
 </head>
 <body>
 <div class="top">
-  <div class="ttl">注音魔法屋<small>ㄅㄆㄇㄈ 示範課</small></div>
-  <button class="x" onclick="goApp()">回去</button>
+  <div class="ttl" id="ttl"></div>
+  <button class="x" id="backBtn" onclick="goApp()"></button>
 </div>
-
-<div id="startScreen" class="start">
-  <div class="mascot" style="font-size:72px">🧚‍♀️</div>
-  <div class="big">我們一起來認識 <ruby>ㄅ<rt>ㄅ</rt></ruby> ㄆ ㄇ ㄈ！</div>
-  <div class="row">
-    <button class="go g" id="contBtn" style="display:none" onclick="resume()">▶ 繼續上次</button>
-    <button class="go" onclick="restart()">從頭開始</button>
-  </div>
-  <div class="note" style="margin-top:16px">一次學一個注音，共四個。中間可以隨時按「回去」休息，下次回來會記得進度。</div>
-</div>
-
-<div id="main" style="display:none">
-  <div class="crumbs" id="crumbs"></div>
-  <div class="stage" id="stage"></div>
-</div>
-
+<div class="bar" id="bar"></div>
+<div class="crumbs" id="crumbs"></div>
+<div class="stage" id="stage"></div>
 <div class="credit">
-  注音讀音：2017 © 教育部，國語注音符號手冊-開放部件，依「創用CC 姓名標示 4.0 國際版本」授權（<a href="https://creativecommons.org/licenses/by/4.0/deed.zh_TW">CC BY 4.0</a>）。官方未標示錄音者，故標示為「教育部注音讀音」，非真人發音宣稱。嘴型為示意圖，非真人照片。描寫為自由描畫，未判斷筆順對錯。角色說明為文字，請家長陪著唸給孩子聽。
+  注音讀音：2017 © 教育部，國語注音符號手冊-開放部件，依「創用CC 姓名標示 4.0 國際版本」授權（<a href="https://creativecommons.org/licenses/by/4.0/deed.zh_TW" target="_blank" rel="noopener">CC BY 4.0</a>）。官方未標示錄音者，故標示為「教育部注音讀音」，不宣稱為真人錄音。
+  影片：Taiwan Bar《泡泡島》ㄅㄆㄇㄈ，以 YouTube 官方播放器嵌入。嘴型為示意圖，非真人照片，待注音老師確認。描寫為自由描畫，未判斷筆順。
 </div>
-
 <script>
 var BASE = 'https://language.moe.gov.tw/001/Upload/files/SITE_CONTENT/M0001/deploy/html_ch/audio/';
-// 37 個注音順序，用來算教育部音檔編號 F1..F37
 var ORDER = Array.from('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦㄧㄨㄩ');
 function moeUrl(sym){ var i = ORDER.indexOf(sym); return i < 0 ? '' : BASE + 'F' + (i + 1) + '.WAV'; }
-
-// 本課四個注音：符號、例詞、注音(例詞)、圖、嘴型說明、嘴型類型
+var VID = 'wFlzn5611b0';
 var ZY = [
-  { s:'ㄅ', w:'包子', wz:'ㄅㄠ˙ㄗ', e:'🥟', mouth:'嘴巴先閉起來，再「啵」一聲打開。', mt:'lips' },
-  { s:'ㄆ', w:'蘋果', wz:'ㄆㄧㄥˊㄍㄨㄛˇ', e:'🍎', mouth:'嘴巴閉起來，用力吹一口氣。', mt:'puff' },
-  { s:'ㄇ', w:'貓咪', wz:'ㄇㄠ ㄇㄧ', e:'🐱', mouth:'嘴巴閉起來，鼻子輕輕哼。', mt:'hum' },
-  { s:'ㄈ', w:'飛機', wz:'ㄈㄟ ㄐㄧ', e:'✈️', mouth:'上面的牙齒輕輕咬住下嘴唇。', mt:'teeth' }
+  { s:'ㄅ', w:'包子', e:'🥟', mouth:'嘴巴先閉起來，再輕輕打開，不用吹氣。', mt:'lips' },
+  { s:'ㄆ', w:'蘋果', e:'🍎', mouth:'嘴巴閉起來，再用力吹一口氣。', mt:'puff' },
+  { s:'ㄇ', w:'貓咪', e:'🐱', mouth:'嘴巴閉起來，聲音從鼻子出來。', mt:'hum' },
+  { s:'ㄈ', w:'飛機', e:'✈️', mouth:'上面的牙齒輕輕碰下嘴唇，吹氣出來。', mt:'teeth' }
 ];
-var STEPS = ['認識符號','聽發音','看嘴型','跟著說','描一描','聽音找注音','生活圖卡','回顧'];
-var ST = { sym:0, step:0 };
+var STEPS = ['看影片','聽發音','看嘴型','跟著說','描一描','聽音選符號','看符號選圖','回顧'];
+var ZYD = {"一": "ㄧ", "七": "ㄑㄧ", "三": "ㄙㄢ", "上": "ㄕㄤˋ", "下": "ㄒㄧㄚˋ", "不": "ㄅㄨˋ", "了": "ㄌㄜ˙", "二": "ㄦˋ", "五": "ㄨˇ", "人": "ㄖㄣˊ", "今": "ㄐㄧㄣ", "以": "ㄧˇ", "你": "ㄋㄧˇ", "來": "ㄌㄞˊ", "個": "ㄍㄜ˙", "們": "ㄇㄣ˙", "備": "ㄅㄟˋ", "先": "ㄒㄧㄢ", "八": "ㄅㄚ", "六": "ㄌㄧㄡˋ", "共": "ㄍㄨㄥˋ", "再": "ㄗㄞˋ", "出": "ㄔㄨ", "到": "ㄉㄠˋ", "力": "ㄌㄧˋ", "動": "ㄉㄨㄥˋ", "包": "ㄅㄠ", "卡": "ㄎㄚˇ", "去": "ㄑㄩˋ", "口": "ㄎㄡˇ", "可": "ㄎㄜˇ", "合": "ㄏㄜˊ", "吹": "ㄔㄨㄟ", "咪": "ㄇㄧ", "唇": "ㄔㄨㄣˊ", "唸": "ㄋㄧㄢˋ", "喔": "ㄛ", "嘴": "ㄗㄨㄟˇ", "四": "ㄙˋ", "回": "ㄏㄨㄟˊ", "圖": "ㄊㄨˊ", "型": "ㄒㄧㄥˊ", "大": "ㄉㄚˋ", "天": "ㄊㄧㄢ", "好": "ㄏㄠˇ", "始": "ㄕˇ", "媽": "ㄇㄚ", "子": "ㄗˇ", "字": "ㄗˋ", "學": "ㄒㄩㄝˊ", "完": "ㄨㄢˊ", "對": "ㄉㄨㄟˋ", "屋": "ㄨ", "己": "ㄐㄧˇ", "巴": "ㄅㄚ", "幕": "ㄇㄨˋ", "平": "ㄆㄧㄥˊ", "影": "ㄧㄥˇ", "從": "ㄘㄨㄥˊ", "怎": "ㄗㄣˇ", "意": "ㄧˋ", "慢": "ㄇㄢˋ", "成": "ㄔㄥˊ", "我": "ㄨㄛˇ", "手": "ㄕㄡˇ", "打": "ㄉㄚˇ", "指": "ㄓˇ", "按": "ㄢˋ", "掉": "ㄉㄧㄠˋ", "描": "ㄇㄧㄠˊ", "播": "ㄅㄛ", "擦": "ㄘㄚ", "改": "ㄍㄞˇ", "教": "ㄐㄧㄠˋ", "是": "ㄕˋ", "板": "ㄅㄢˇ", "果": "ㄍㄨㄛˇ", "棒": "ㄅㄤˋ", "機": "ㄐㄧ", "檔": "ㄉㄤˇ", "次": "ㄘˋ", "步": "ㄅㄨˋ", "氣": "ㄑㄧˋ", "法": "ㄈㄚˇ", "注": "ㄓㄨˋ", "照": "ㄓㄠˋ", "爸": "ㄅㄚˋ", "片": "ㄆㄧㄢˋ", "牙": "ㄧㄚˊ", "班": "ㄅㄢ", "用": "ㄩㄥˋ", "畫": "ㄏㄨㄚˋ", "發": "ㄈㄚ", "的": "ㄉㄜ˙", "直": "ㄓˊ", "看": "ㄎㄢˋ", "真": "ㄓㄣ", "碰": "ㄆㄥˋ", "示": "ㄕˋ", "符": "ㄈㄨˊ", "第": "ㄉㄧˋ", "答": "ㄉㄚˊ", "範": "ㄈㄢˋ", "粉": "ㄈㄣˇ", "紅": "ㄏㄨㄥˊ", "給": "ㄍㄟˇ", "繼": "ㄐㄧˋ", "續": "ㄒㄩˋ", "習": "ㄒㄧˊ", "聲": "ㄕㄥ", "聽": "ㄊㄧㄥ", "育": "ㄩˋ", "自": "ㄗˋ", "色": "ㄙㄜˋ", "著": "ㄓㄜ˙", "蘋": "ㄆㄧㄥˊ", "號": "ㄏㄠˋ", "認": "ㄖㄣˋ", "語": "ㄩˇ", "說": "ㄕㄨㄛ", "課": "ㄎㄜˋ", "識": "ㄕˊ", "讀": "ㄉㄨˊ", "貓": "ㄇㄠ", "起": "ㄑㄧˇ", "跟": "ㄍㄣ", "輕": "ㄑㄧㄥ", "這": "ㄓㄜˋ", "選": "ㄒㄩㄢˇ", "部": "ㄅㄨˋ", "重": "ㄓㄨㄥˋ", "錄": "ㄌㄨˋ", "閉": "ㄅㄧˋ", "開": "ㄎㄞ", "關": "ㄍㄨㄢ", "面": "ㄇㄧㄢˋ", "音": "ㄧㄣ", "頭": "ㄊㄡˊ", "題": "ㄊㄧˊ", "顧": "ㄍㄨˋ", "飛": "ㄈㄟ", "魔": "ㄇㄛˊ", "麼": "ㄇㄜ˙", "點": "ㄉㄧㄢˇ", "鼻": "ㄅㄧˊ", "齒": "ㄔˇ", "__w": {"包子": ["ㄅㄠ", "ㄗ˙"], "爸爸": ["ㄅㄚˋ", "ㄅㄚ˙"], "媽媽": ["ㄇㄚ", "ㄇㄚ˙"], "一下": ["ㄧ", "ㄒㄧㄚˋ"], "一次": ["ㄧ", "ㄘˋ"], "一個": ["ㄧ", "ㄍㄜ˙"], "一直": ["ㄧ", "ㄓˊ"], "一口": ["ㄧ", "ㄎㄡˇ"], "看看": ["ㄎㄢˋ", "ㄎㄢ˙"], "聽聽": ["ㄊㄧㄥ", "ㄊㄧㄥ˙"], "一點": ["ㄧ", "ㄉㄧㄢˇ"], "點一點": ["ㄉㄧㄢˇ", "ㄧ", "ㄉㄧㄢˇ"], "描一描": ["ㄇㄧㄠˊ", "ㄧ", "ㄇㄧㄠˊ"], "頭": ["ㄊㄡˊ"], "開頭": ["ㄎㄞ", "ㄊㄡˊ"], "嘴巴": ["ㄗㄨㄟˇ", "ㄅㄚ˙"], "鼻子": ["ㄅㄧˊ", "ㄗ˙"], "牙齒": ["ㄧㄚˊ", "ㄔˇ"], "影片": ["ㄧㄥˇ", "ㄆㄧㄢˋ"], "重聽": ["ㄔㄨㄥˊ", "ㄊㄧㄥ"], "重描": ["ㄔㄨㄥˊ", "ㄇㄧㄠˊ"]}};
+var ST = { step:0, vol:1, cap:true, anim:true };
+var Q = { list:[], i:0 }, TS = 0;
 
-// ---- 音檔播放（只播教育部注音讀音）----
+/* ---- 注音：國字左、注音右 ---- */
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function zb(p){ var neu = p.indexOf('˙') >= 0; p = p.replace('˙',''); var t = ''; if (/[ˊˇˋ]$/.test(p)) { t = p.slice(-1); p = p.slice(0,-1); }
+  return '<span class="zy"><span class="zs">' + (neu ? '<span class="zn0">˙</span>' : '') + Array.from(p).join('<br>') + '</span>' + (t ? '<span class="zt">' + t + '</span>' : '') + '</span>'; }
+function z(t){ var a = Array.from(String(t)), o = '', k = 0;
+  // 詞優先（破音字）
+  var words = ZYD.__w || {}, WL = Object.keys(words).sort(function(x, y){ return y.length - x.length; });
+  for (var i = 0; i < a.length; i++) {
+    var hit = null;
+    for (var q = 0; q < WL.length; q++) { var w = WL[q]; if (a.slice(i, i + Array.from(w).length).join('') === w) { hit = w; break; } }
+    if (hit) { var ps = words[hit]; Array.from(hit).forEach(function(c, j){ o += '<span class="zh"><span class="zc">' + esc(c) + '</span>' + zb(ps[j]) + '</span>'; }); i += Array.from(hit).length - 1; continue; }
+    var c = a[i]; o += ZYD[c] ? '<span class="zh"><span class="zc">' + esc(c) + '</span>' + zb(ZYD[c]) + '</span>' : esc(c);
+  }
+  return o; }
+
+/* ---- 聲音 ---- */
 var AU = new Audio();
-function play(sym){ try{ AU.pause(); }catch(e){} AU.src = moeUrl(sym); AU.currentTime = 0; var p = AU.play(); if(p&&p.catch)p.catch(function(){}); }
-
-// ---- 進度儲存 ----
-function save(){ try{ localStorage.setItem('cencenZyBpmf', JSON.stringify(ST)); }catch(e){} }
-function load(){ try{ return JSON.parse(localStorage.getItem('cencenZyBpmf')||'null'); }catch(e){ return null; } }
-
-function goApp(){ location.href = './'; }
-function restart(){ ST = { sym:0, step:0 }; save(); begin(); }
-function resume(){ var p = load(); if(p){ ST = p; } begin(); }
-function begin(){ document.getElementById('startScreen').style.display='none'; document.getElementById('main').style.display=''; render(); }
-
-function crumbs(){
-  var h = STEPS.map(function(_,i){ return '<i class="'+(i<ST.step?'ok':(i===ST.step?'on':''))+'"></i>'; }).join('');
-  document.getElementById('crumbs').innerHTML = h;
+function play(sym){
+  try { AU.pause(); } catch(e) {}
+  AU = new Audio(moeUrl(sym)); AU.volume = ST.vol;
+  [].forEach.call(document.querySelectorAll('[data-s="' + sym + '"]'), function(el){ el.classList.add('ping'); setTimeout(function(){ el.classList.remove('ping'); }, 700); });
+  var p = AU.play(); if (p && p.catch) p.catch(function(){ var h = document.getElementById('hint'); if (h) h.innerHTML = z('教育部音檔播不出來，改用平板的合成語音（備用）'); say(sym); });
 }
-function next(){ try{ AU.pause(); }catch(e){}
-  ST.step++;
-  if (ST.step >= STEPS.length) { ST.step = 0; ST.sym++; if (ST.sym >= ZY.length) { ST.sym = 0; return done(); } }
-  save(); render();
+function say(t){ try { var s = window.speechSynthesis; if (!s) return; s.cancel(); var u = new SpeechSynthesisUtterance(t); u.lang = 'zh-TW'; u.rate = 0.9; u.volume = ST.vol; s.speak(u); } catch(e) {} }
+function stopAll(){ try { AU.pause(); } catch(e) {} try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e) {} }
+
+/* ---- 進度（存在這台平板） ---- */
+function save(){ try { localStorage.setItem('cencenZyBpmf2', JSON.stringify(ST)); } catch(e) {} }
+function load(){ try { return JSON.parse(localStorage.getItem('cencenZyBpmf2') || 'null'); } catch(e) { return null; } }
+function goApp(){ stopAll(); location.href = './'; }
+
+function bar(){
+  document.getElementById('bar').innerHTML =
+    '<label class="set">🔊 <input type="range" min="0" max="1" step="0.1" value="' + ST.vol + '" aria-label="音量" oninput="ST.vol=+this.value;AU.volume=ST.vol" onchange="save()"></label>' +
+    '<button class="set" onclick="ST.cap=!ST.cap;save();go(ST.step)">' + (ST.cap ? '💬 ' + z('字幕開') : '💬 ' + z('字幕關')) + '</button>' +
+    '<button class="set" onclick="ST.anim=!ST.anim;save();go(ST.step)">' + (ST.anim ? '✨ ' + z('動畫開') : '✨ ' + z('動畫關')) + '</button>';
+  document.getElementById('crumbs').innerHTML = STEPS.map(function(_, i){ return '<i class="' + (i < ST.step ? 'ok' : (i === ST.step ? 'on' : '')) + '"></i>'; }).join('');
+  document.body.classList.toggle('noanim', !ST.anim);
 }
+function cap(t){ return ST.cap ? '<div class="cap">' + z(t) + '</div>' : ''; }
 function stage(h){ document.getElementById('stage').innerHTML = h; }
+function nav(nextLabel){
+  return '<div class="row">' + (ST.step > 0 ? '<button class="go" style="background:#aaa;box-shadow:0 7px 0 #888" onclick="go(ST.step-1)">' + z('上一步') + '</button>' : '') +
+    (nextLabel ? '<button class="go g" onclick="go(ST.step+1)">' + z(nextLabel) + ' ➜</button>' : '') + '</div>';
+}
+function head(){ return '<span class="step">' + z('第' + '一二三四五六七八'.charAt(ST.step) + '步：' + STEPS[ST.step]) + '</span>'; }
+
+function start(){
+  document.getElementById('ttl').innerHTML = z('注音魔法屋') + '<small>ㄅㄆㄇㄈ ' + z('示範課') + '</small>';
+  document.getElementById('backBtn').innerHTML = z('回去');
+  var p = load();
+  if (p) { ST.vol = typeof p.vol === 'number' ? p.vol : 1; ST.cap = p.cap !== false; ST.anim = p.anim !== false; }
+  bar();
+  if (p && p.step > 0 && p.step < STEPS.length) {
+    stage('<div class="mascot" style="font-size:72px">🧚‍♀️</div><div class="say">' + z('上次學到「' + STEPS[p.step] + '」') + '</div>' +
+      '<div class="row"><button class="go g" onclick="go(' + p.step + ')">▶ ' + z('從上次繼續') + '</button><button class="go" onclick="go(0)">' + z('從頭開始') + '</button></div>');
+  } else go(0);
+}
+function go(n){
+  stopAll(); ST.step = Math.max(0, Math.min(n, STEPS.length - 1)); save(); bar();
+  var s = ST.step;
+  if (s === 0) {
+    stage(head() + cap('先看影片認識ㄅㄆㄇㄈ，看完按「下一步」。') +
+      '<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/' + VID + '?rel=0&playsinline=1&modestbranding=1&cc_load_policy=' + (ST.cap ? 1 : 0) + '&cc_lang_pref=zh-TW&hl=zh-TW" title="ㄅㄆㄇㄈ 注音教學影片" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>' +
+      '<div class="note">影片看不到時，可開 <a href="https://www.youtube.com/watch?v=' + VID + '" target="_blank" rel="noopener">原影片</a> 或 <a href="https://market.cloud.edu.tw/resources/video/1841026" target="_blank" rel="noopener">教育部教育雲版本</a>，或直接按下一步。</div>' + nav('下一步'));
+  } else if (s === 1) {
+    stage(head() + cap('點一點卡片，聽聽看怎麼唸，可以一直重聽喔！') + '<div class="badge">' + z('教育部注音讀音') + '</div>' +
+      '<div class="cards">' + ZY.map(function(x){ return '<button data-s="' + x.s + '" onclick="play(\'' + x.s + '\')">' + x.s + '<small>🔊</small></button>'; }).join('') + '</div><div class="hint" id="hint"></div>' + nav('下一步'));
+  } else if (s === 2) {
+    stage(head() + cap('看看嘴巴怎麼動，點一下可以聽聲音。') +
+      '<div class="mouths">' + ZY.map(function(x){ return '<button class="mouth" data-s="' + x.s + '" onclick="play(\'' + x.s + '\')"><b>' + x.s + '</b>' + mouthSvg(x.mt) + '<span>' + z(x.mouth) + '</span></button>'; }).join('') + '</div>' +
+      '<div class="note">' + z('嘴型是示意圖，不是真人照片') + '</div><div class="hint" id="hint"></div>' + nav('下一步'));
+  } else if (s === 3) {
+    stage(head() + cap('先聽一次，再自己大聲唸一次，唸給爸爸媽媽聽。不用錄音喔！') +
+      '<div class="cards">' + ZY.map(function(x){ return '<button data-s="' + x.s + '" onclick="play(\'' + x.s + '\')">' + x.s + '<small>🔊 ' + z('聽完跟著唸') + '</small></button>'; }).join('') + '</div><div class="hint" id="hint"></div>' + nav('我唸好了'));
+  } else if (s === 4) {
+    stage(head() + cap('選一個注音，用手指照著粉紅色的字描一描。') +
+      '<div class="tabs">' + ZY.map(function(x, i){ return '<button class="' + (i === TS ? 'on' : '') + '" onclick="TS=' + i + ';go(4)">' + x.s + '</button>'; }).join('') + '</div>' +
+      '<div class="traceWrap"><div class="ghost">' + ZY[TS].s + '</div><canvas id="tc" width="260" height="260"></canvas></div>' +
+      '<div class="row"><button class="hear" onclick="play(\'' + ZY[TS].s + '\')">🔊 ' + z('聽') + '</button><button class="go" style="background:#aaa;box-shadow:0 7px 0 #888" onclick="traceClear()">' + z('擦掉重描') + '</button></div>' + nav('描好了'));
+    traceInit();
+  } else if (s === 5 || s === 6) {
+    Q.list = shuffle([0, 1, 2, 3]); Q.i = 0; quiz();
+  } else if (s === 7) {
+    stage(head() + cap('今天認識了ㄅㄆㄇㄈ！點一點，再聽一次。') +
+      '<div class="cards">' + ZY.map(function(x){ return '<button data-s="' + x.s + '" onclick="play(\'' + x.s + '\')">' + x.s + '<small>' + x.e + ' ' + z(x.w) + '</small></button>'; }).join('') + '</div><div class="hint" id="hint"></div>' +
+      '<div class="row"><button class="go" onclick="go(0)">' + z('再學一次') + '</button><button class="go g" onclick="ST.step=0;save();goApp()">' + z('完成，回大班學習') + '</button></div>');
+    say('你好棒！今天認識了ㄅㄆㄇㄈ！');
+  }
+}
+function shuffle(a){ for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function quiz(){
+  var x = ZY[Q.list[Q.i]], s = ST.step, h = head() + '<div class="note">' + z('第' + '一二三四'.charAt(Q.i) + '題，共四題') + '</div>';
+  if (s === 5) {
+    stage(h + cap('聽聲音，選出對的注音。') + '<div class="row"><button class="hear" onclick="play(\'' + x.s + '\')">🔊 ' + z('聽聲音') + '</button></div>' +
+      '<div class="cards" id="opts">' + ZY.map(function(o){ return '<button onclick="ans(this,\'' + o.s + '\')">' + o.s + '</button>'; }).join('') + '</div><div class="hint" id="hint"></div>' + nav(''));
+    setTimeout(function(){ play(x.s); }, 400);
+  } else {
+    stage(h + cap('看注音，選出開頭是這個音的圖。') + '<div class="sym" data-s="' + x.s + '" onclick="play(\'' + x.s + '\')" style="cursor:pointer">' + x.s + '</div>' +
+      '<div class="pics" id="opts">' + shuffle(ZY.slice()).map(function(o){ return '<button onclick="ans(this,\'' + o.s + '\')"><span class="p">' + o.e + '</span>' + z(o.w) + '</button>'; }).join('') + '</div><div class="hint" id="hint"></div>' + nav(''));
+  }
+}
+function ans(el, choice){
+  var x = ZY[Q.list[Q.i]], hint = document.getElementById('hint');
+  if (choice === x.s) {
+    hint.innerHTML = z('答對了！你好棒！') + ' 🎉'; say('答對了！');
+    [].forEach.call(document.querySelectorAll('#opts button'), function(b){ b.onclick = null; });
+    setTimeout(function(){ Q.i++; if (Q.i >= Q.list.length) go(ST.step + 1); else quiz(); }, 1200);
+  } else {
+    hint.innerHTML = z('再聽一次，我們慢慢來') + ' 🙂 <button class="hear" style="font-size:18px;padding:8px 18px" onclick="play(\'' + x.s + '\')">🔊 ' + z('再聽一次') + '</button>';
+    say('再聽一次，我們慢慢來');
+  }
+}
 
 function mouthSvg(mt){
   var lips = '<ellipse cx="115" cy="95" rx="70" ry="14" fill="#E57A95"/>';
@@ -130,86 +236,6 @@ function mouthSvg(mt){
   if (mt==='teeth') lips = '<ellipse cx="115" cy="98" rx="68" ry="20" fill="#E57A95"/><rect x="60" y="78" width="110" height="16" rx="4" fill="#fff" stroke="#DDD"/><path d="M60 100 Q115 118 170 100" fill="#B84D6A"/>';
   return '<svg class="mouthSvg" viewBox="0 0 230 170"><ellipse cx="115" cy="90" rx="100" ry="78" fill="#FFE0CB"/>'+lips+'</svg>';
 }
-
-function render(){
-  crumbs();
-  var z = ZY[ST.sym], step = ST.step;
-  var head = '<span class="step">'+(ST.sym+1)+'／4 · '+STEPS[step]+'</span>';
-  if (step===0){ // 認識符號
-    stage(head+'<div class="sym">'+z.s+'</div><div class="card-img">'+z.e+'</div>'+
-      '<div class="say">這是 <b>'+z.s+'</b>，<ruby>'+z.w+'<rt>'+z.wz+'</rt></ruby> 的 '+z.s+'。</div>'+
-      '<button class="go" onclick="next()">繼續</button>');
-  } else if (step===1){ // 聽發音
-    stage(head+'<div class="sym">'+z.s+'</div>'+
-      '<div class="say">點一下，聽聽 '+z.s+' 怎麼念。可以一直重聽。</div>'+
-      '<div class="badge">教育部注音讀音</div>'+
-      '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 聽發音</button></div>'+
-      '<button class="go" onclick="next()">下一步</button>'); play(z.s);
-  } else if (step===2){ // 看嘴型
-    stage(head+mouthSvg(z.mt)+'<div class="say">'+z.mouth+'</div>'+
-      '<div class="note">（嘴型示意圖，不是真人照片）</div>'+
-      '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 再聽一次</button></div>'+
-      '<button class="go" onclick="next()">下一步</button>');
-  } else if (step===3){ // 跟著說
-    stage(head+'<div class="symSm">'+z.s+'</div><div class="mascot">🧚‍♀️</div>'+
-      '<div class="say">換你念念看！跟著唸 <b>'+z.s+'</b>。</div>'+
-      '<div class="note">不用錄音，念給爸爸媽媽聽就好。</div>'+
-      '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 再聽一次</button></div>'+
-      '<button class="go g" onclick="next()">我念好了</button>');
-  } else if (step===4){ // 描一描
-    stage(head+'<div class="say">用手指照著粉紅色的 <b>'+z.s+'</b> 描一描。</div>'+
-      '<div class="traceWrap"><div class="ghost">'+z.s+'</div><canvas id="tc" width="260" height="260"></canvas></div>'+
-      '<div class="row"><button class="go" style="background:#aaa;box-shadow:0 7px 0 #888" onclick="traceClear()">擦掉重描</button>'+
-      '<button class="go g" onclick="next()">描好了</button></div>'+
-      '<div class="note">自由描畫，陪孩子一起看符號的樣子（未自動判斷筆順）。</div>');
-    traceInit();
-  } else if (step===5){ // 聽音找注音
-    quizListen(z);
-  } else if (step===6){ // 生活圖卡
-    quizWord(z);
-  } else if (step===7){ // 回顧
-    stage(head+'<div class="card-img">'+z.e+' '+z.s+'</div>'+
-      '<div class="say">這一個注音 <b>'+z.s+'</b> 聽過、描過、也玩過了！</div>'+
-      '<button class="go g" onclick="next()">'+(ST.sym<ZY.length-1?'學下一個注音':'看全部回顧')+'</button>');
-  }
-}
-
-// 聽音找注音：播一個符號，從 3 個選項選
-function quizListen(z){
-  var opts = pickOpts(z.s, 3);
-  stage('<span class="step">'+(ST.sym+1)+'／4 · 聽音找注音</span>'+
-    '<div class="say">聽聽看，是哪一個注音？</div>'+
-    '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 聽題目</button></div>'+
-    '<div class="opts" id="opts">'+opts.map(function(o){ return '<button onclick="pick(this,\''+o+'\',\''+z.s+'\',\'listen\')">'+o+'</button>'; }).join('')+'</div>'+
-    '<div class="hint" id="hint"></div>');
-  setTimeout(function(){ play(z.s); },400);
-}
-// 生活圖卡：看詞+圖，找出本課注音
-function quizWord(z){
-  var opts = pickOpts(z.s, 3);
-  stage('<span class="step">'+(ST.sym+1)+'／4 · 生活圖卡</span>'+
-    '<div class="card-img">'+z.e+'</div><div class="word"><ruby>'+z.w+'<rt>'+z.wz+'</rt></ruby></div>'+
-    '<div class="say">「'+z.w+'」裡面有哪一個注音？</div>'+
-    '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 聽 '+z.s+'</button></div>'+
-    '<div class="opts" id="opts">'+opts.map(function(o){ return '<button onclick="pick(this,\''+o+'\',\''+z.s+'\',\'word\')">'+o+'</button>'; }).join('')+'</div>'+
-    '<div class="hint" id="hint"></div>');
-}
-function pickOpts(ans, n){
-  var pool = ZY.map(function(x){ return x.s; }).concat(['ㄉ','ㄊ','ㄋ','ㄍ']);
-  var set = [ans];
-  while (set.length < n){ var c = pool[Math.floor(Math.random()*pool.length)]; if (set.indexOf(c)<0) set.push(c); }
-  for (var i=set.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=set[i];set[i]=set[j];set[j]=t; }
-  return set;
-}
-function pick(el, choice, ans, mode){
-  var hint = document.getElementById('hint');
-  if (choice === ans){ el.classList.add('yes'); hint.textContent='答對了！你好棒！';
-    [].forEach.call(document.querySelectorAll('#opts button'), function(b){ b.onclick=null; });
-    play(ans); setTimeout(next, 1300);
-  } else { el.classList.add('no'); el.onclick=null; hint.textContent='再聽一次，再試試看 😊'; play(ans); }
-}
-
-// 描寫 canvas
 var TC = { d:false };
 function traceInit(){
   var c = document.getElementById('tc'); if(!c) return; var ctx = c.getContext('2d');
@@ -222,18 +248,7 @@ function traceInit(){
   c.addEventListener('touchstart',down,{passive:false}); c.addEventListener('touchmove',move,{passive:false}); c.addEventListener('touchend',up);
 }
 function traceClear(){ var c=document.getElementById('tc'); if(c){ c.getContext('2d').clearRect(0,0,c.width,c.height); } }
-
-function done(){
-  save();
-  var cells = ZY.map(function(z){ return '<div>'+z.s+'<span class="ok">✓</span></div>'; }).join('');
-  stage('<div class="mascot" style="font-size:72px">🎉</div><div class="say">你好棒！ㄅ ㄆ ㄇ ㄈ 都聽過、描過、也玩過了！</div>'+
-    '<div class="review">'+cells+'</div>'+
-    '<div class="row" style="margin-top:8px"><button class="go" onclick="restart()">再玩一次</button><button class="go g" onclick="goApp()">回大班學習</button></div>');
-  document.getElementById('crumbs').innerHTML = STEPS.map(function(){ return '<i class="ok"></i>'; }).join('');
-}
-
-// 開場：有進度就顯示「繼續上次」
-(function(){ var p = load(); if (p && (p.sym>0 || p.step>0)) document.getElementById('contBtn').style.display=''; })();
+start();
 </script>
 </body>
 </html>
