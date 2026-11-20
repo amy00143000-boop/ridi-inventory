@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>注音魔法屋 · ㄅㄆㄇㄈ 示範課</title>
+<style>
+:root{--ink:#4A2B45;--acc:#FF8FB1;--accD:#E0607F;--accT:#FFE1EC;--blue:#5B9BE0;--blueD:#3C7BC0;--green:#6BC98A;--greenD:#3FA863;--bg:#FFF4F9;--card:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font-family:"PingFang TC","Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:
+ radial-gradient(1200px 500px at 50% -10%,#FFE7F2 0,rgba(255,231,242,0) 60%),var(--bg);
+ padding:14px 5vw 40px;min-height:100vh}
+ruby rt{font-size:.5em;color:var(--accD);font-weight:800}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:720px;margin:0 auto 6px}
+.ttl{font-size:22px;font-weight:900;color:var(--accD)}
+.ttl small{display:block;font-size:13px;opacity:.7;font-weight:700}
+.x{font:inherit;font-size:18px;font-weight:900;border:3px solid var(--acc);background:#fff;color:var(--accD);border-radius:999px;padding:7px 16px;cursor:pointer}
+.crumbs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;max-width:720px;margin:0 auto 10px}
+.crumbs i{width:12px;height:12px;border-radius:50%;background:var(--accT);display:inline-block}
+.crumbs i.on{background:var(--acc);transform:scale(1.25)}
+.crumbs i.ok{background:var(--green)}
+.stage{max-width:720px;margin:0 auto;background:var(--card);border:5px solid var(--accT);border-radius:30px;
+ box-shadow:0 10px 0 var(--accT);padding:20px 18px;text-align:center;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.step{font-size:16px;font-weight:900;color:var(--blueD);background:#EAF3FC;border-radius:999px;padding:4px 16px;display:inline-block}
+.sym{font-size:150px;font-weight:900;line-height:1;color:var(--ink)}
+.symSm{font-size:70px;font-weight:900}
+.card-img{font-size:72px}
+.word{font-size:30px;font-weight:900}
+.say{font-size:20px;font-weight:800;line-height:1.6;max-width:460px}
+.mascot{font-size:54px;line-height:1}
+.hear{font:inherit;font-size:26px;font-weight:900;border:0;border-radius:999px;padding:16px 30px;background:var(--acc);color:#fff;cursor:pointer;box-shadow:0 7px 0 var(--accD)}
+.hear:active{transform:translateY(5px);box-shadow:0 2px 0 var(--accD)}
+.go{font:inherit;font-size:24px;font-weight:900;border:0;border-radius:999px;padding:14px 34px;background:var(--blue);color:#fff;cursor:pointer;box-shadow:0 7px 0 var(--blueD)}
+.go:active{transform:translateY(5px);box-shadow:0 2px 0 var(--blueD)}
+.go.g{background:var(--green);box-shadow:0 7px 0 var(--greenD)}
+.go.g:active{box-shadow:0 2px 0 var(--greenD)}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.opts{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.opts button{font:inherit;font-size:80px;font-weight:900;width:130px;height:130px;background:#fff;border:5px solid var(--accT);border-radius:26px;cursor:pointer;color:var(--ink)}
+.opts button.yes{border-color:var(--green);background:#E7F7ED}
+.opts button.no{border-color:#ccc;opacity:.35}
+.hint{font-size:17px;font-weight:800;color:var(--accD);min-height:24px}
+.note{font-size:14px;opacity:.7;font-weight:700}
+.badge{font-size:13px;color:var(--blueD);background:#EAF3FC;border-radius:999px;padding:3px 12px;font-weight:800}
+canvas{touch-action:none;border-radius:22px;background:#fff}
+.traceWrap{position:relative;width:260px;height:260px}
+.traceWrap .ghost{position:absolute;inset:0;font-size:210px;font-weight:900;color:#FFD7E6;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.traceWrap canvas{position:absolute;inset:0;width:260px;height:260px}
+.review{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:460px}
+.review div{background:#fff;border:4px solid var(--accT);border-radius:20px;padding:10px 4px;font-size:46px;font-weight:900}
+.review div .ok{display:block;font-size:20px;color:var(--greenD)}
+.credit{max-width:720px;margin:16px auto 0;font-size:12px;line-height:1.7;opacity:.7;text-align:center;word-break:break-all}
+.credit a{color:var(--blue)}
+.start{max-width:720px;margin:0 auto;text-align:center}
+.start .big{font-size:26px;font-weight:900;margin:10px 0 18px}
+.mouthSvg{width:230px;height:170px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="ttl">注音魔法屋<small>ㄅㄆㄇㄈ 示範課</small></div>
+  <button class="x" onclick="goApp()">回去</button>
+</div>
+
+<div id="startScreen" class="start">
+  <div class="mascot" style="font-size:72px">🧚‍♀️</div>
+  <div class="big">我們一起來認識 <ruby>ㄅ<rt>ㄅ</rt></ruby> ㄆ ㄇ ㄈ！</div>
+  <div class="row">
+    <button class="go g" id="contBtn" style="display:none" onclick="resume()">▶ 繼續上次</button>
+    <button class="go" onclick="restart()">從頭開始</button>
+  </div>
+  <div class="note" style="margin-top:16px">一次學一個注音，共四個。中間可以隨時按「回去」休息，下次回來會記得進度。</div>
+</div>
+
+<div id="main" style="display:none">
+  <div class="crumbs" id="crumbs"></div>
+  <div class="stage" id="stage"></div>
+</div>
+
+<div class="credit">
+  注音讀音：2017 © 教育部，國語注音符號手冊-開放部件，依「創用CC 姓名標示 4.0 國際版本」授權（<a href="https://creativecommons.org/licenses/by/4.0/deed.zh_TW">CC BY 4.0</a>）。官方未標示錄音者，故標示為「教育部注音讀音」，非真人發音宣稱。嘴型為示意圖，非真人照片。描寫為自由描畫，未判斷筆順對錯。角色說明為文字，請家長陪著唸給孩子聽。
+</div>
+
+<script>
+var BASE = 'https://language.moe.gov.tw/001/Upload/files/SITE_CONTENT/M0001/deploy/html_ch/audio/';
+// 37 個注音順序，用來算教育部音檔編號 F1..F37
+var ORDER = Array.from('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦㄧㄨㄩ');
+function moeUrl(sym){ var i = ORDER.indexOf(sym); return i < 0 ? '' : BASE + 'F' + (i + 1) + '.WAV'; }
+
+// 本課四個注音：符號、例詞、注音(例詞)、圖、嘴型說明、嘴型類型
+var ZY = [
+  { s:'ㄅ', w:'包子', wz:'ㄅㄠ˙ㄗ', e:'🥟', mouth:'嘴巴先閉起來，再「啵」一聲打開。', mt:'lips' },
+  { s:'ㄆ', w:'蘋果', wz:'ㄆㄧㄥˊㄍㄨㄛˇ', e:'🍎', mouth:'嘴巴閉起來，用力吹一口氣。', mt:'puff' },
+  { s:'ㄇ', w:'貓咪', wz:'ㄇㄠ ㄇㄧ', e:'🐱', mouth:'嘴巴閉起來，鼻子輕輕哼。', mt:'hum' },
+  { s:'ㄈ', w:'飛機', wz:'ㄈㄟ ㄐㄧ', e:'✈️', mouth:'上面的牙齒輕輕咬住下嘴唇。', mt:'teeth' }
+];
+var STEPS = ['認識符號','聽發音','看嘴型','跟著說','描一描','聽音找注音','生活圖卡','回顧'];
+var ST = { sym:0, step:0 };
+
+// ---- 音檔播放（只播教育部注音讀音）----
+var AU = new Audio();
+function play(sym){ try{ AU.pause(); }catch(e){} AU.src = moeUrl(sym); AU.currentTime = 0; var p = AU.play(); if(p&&p.catch)p.catch(function(){}); }
+
+// ---- 進度儲存 ----
+function save(){ try{ localStorage.setItem('cencenZyBpmf', JSON.stringify(ST)); }catch(e){} }
+function load(){ try{ return JSON.parse(localStorage.getItem('cencenZyBpmf')||'null'); }catch(e){ return null; } }
+
+function goApp(){ location.href = './'; }
+function restart(){ ST = { sym:0, step:0 }; save(); begin(); }
+function resume(){ var p = load(); if(p){ ST = p; } begin(); }
+function begin(){ document.getElementById('startScreen').style.display='none'; document.getElementById('main').style.display=''; render(); }
+
+function crumbs(){
+  var h = STEPS.map(function(_,i){ return '<i class="'+(i<ST.step?'ok':(i===ST.step?'on':''))+'"></i>'; }).join('');
+  document.getElementById('crumbs').innerHTML = h;
+}
+function next(){ try{ AU.pause(); }catch(e){}
+  ST.step++;
+  if (ST.step >= STEPS.length) { ST.step = 0; ST.sym++; if (ST.sym >= ZY.length) { ST.sym = 0; return done(); } }
+  save(); render();
+}
+function stage(h){ document.getElementById('stage').innerHTML = h; }
+
+function mouthSvg(mt){
+  var lips = '<ellipse cx="115" cy="95" rx="70" ry="14" fill="#E57A95"/>';
+  if (mt==='lips') lips = '<path d="M45 95 Q115 88 185 95 Q115 102 45 95 Z" fill="#C85C78"/>';
+  if (mt==='puff') lips = '<path d="M45 95 Q115 88 185 95 Q115 102 45 95 Z" fill="#C85C78"/><path d="M188 95 q22 -6 40 0" stroke="#9FC6F0" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M190 108 q24 -4 44 2" stroke="#9FC6F0" stroke-width="6" fill="none" stroke-linecap="round"/>';
+  if (mt==='hum') lips = '<path d="M45 95 Q115 88 185 95 Q115 102 45 95 Z" fill="#C85C78"/><text x="150" y="60" font-size="26">🎵</text>';
+  if (mt==='teeth') lips = '<ellipse cx="115" cy="98" rx="68" ry="20" fill="#E57A95"/><rect x="60" y="78" width="110" height="16" rx="4" fill="#fff" stroke="#DDD"/><path d="M60 100 Q115 118 170 100" fill="#B84D6A"/>';
+  return '<svg class="mouthSvg" viewBox="0 0 230 170"><ellipse cx="115" cy="90" rx="100" ry="78" fill="#FFE0CB"/>'+lips+'</svg>';
+}
+
+function render(){
+  crumbs();
+  var z = ZY[ST.sym], step = ST.step;
+  var head = '<span class="step">'+(ST.sym+1)+'／4 · '+STEPS[step]+'</span>';
+  if (step===0){ // 認識符號
+    stage(head+'<div class="sym">'+z.s+'</div><div class="card-img">'+z.e+'</div>'+
+      '<div class="say">這是 <b>'+z.s+'</b>，<ruby>'+z.w+'<rt>'+z.wz+'</rt></ruby> 的 '+z.s+'。</div>'+
+      '<button class="go" onclick="next()">繼續</button>');
+  } else if (step===1){ // 聽發音
+    stage(head+'<div class="sym">'+z.s+'</div>'+
+      '<div class="say">點一下，聽聽 '+z.s+' 怎麼念。可以一直重聽。</div>'+
+      '<div class="badge">教育部注音讀音</div>'+
+      '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 聽發音</button></div>'+
+      '<button class="go" onclick="next()">下一步</button>'); play(z.s);
+  } else if (step===2){ // 看嘴型
+    stage(head+mouthSvg(z.mt)+'<div class="say">'+z.mouth+'</div>'+
+      '<div class="note">（嘴型示意圖，不是真人照片）</div>'+
+      '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 再聽一次</button></div>'+
+      '<button class="go" onclick="next()">下一步</button>');
+  } else if (step===3){ // 跟著說
+    stage(head+'<div class="symSm">'+z.s+'</div><div class="mascot">🧚‍♀️</div>'+
+      '<div class="say">換你念念看！跟著唸 <b>'+z.s+'</b>。</div>'+
+      '<div class="note">不用錄音，念給爸爸媽媽聽就好。</div>'+
+      '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 再聽一次</button></div>'+
+      '<button class="go g" onclick="next()">我念好了</button>');
+  } else if (step===4){ // 描一描
+    stage(head+'<div class="say">用手指照著粉紅色的 <b>'+z.s+'</b> 描一描。</div>'+
+      '<div class="traceWrap"><div class="ghost">'+z.s+'</div><canvas id="tc" width="260" height="260"></canvas></div>'+
+      '<div class="row"><button class="go" style="background:#aaa;box-shadow:0 7px 0 #888" onclick="traceClear()">擦掉重描</button>'+
+      '<button class="go g" onclick="next()">描好了</button></div>'+
+      '<div class="note">自由描畫，陪孩子一起看符號的樣子（未自動判斷筆順）。</div>');
+    traceInit();
+  } else if (step===5){ // 聽音找注音
+    quizListen(z);
+  } else if (step===6){ // 生活圖卡
+    quizWord(z);
+  } else if (step===7){ // 回顧
+    stage(head+'<div class="card-img">'+z.e+' '+z.s+'</div>'+
+      '<div class="say">這一個注音 <b>'+z.s+'</b> 聽過、描過、也玩過了！</div>'+
+      '<button class="go g" onclick="next()">'+(ST.sym<ZY.length-1?'學下一個注音':'看全部回顧')+'</button>');
+  }
+}
+
+// 聽音找注音：播一個符號，從 3 個選項選
+function quizListen(z){
+  var opts = pickOpts(z.s, 3);
+  stage('<span class="step">'+(ST.sym+1)+'／4 · 聽音找注音</span>'+
+    '<div class="say">聽聽看，是哪一個注音？</div>'+
+    '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 聽題目</button></div>'+
+    '<div class="opts" id="opts">'+opts.map(function(o){ return '<button onclick="pick(this,\''+o+'\',\''+z.s+'\',\'listen\')">'+o+'</button>'; }).join('')+'</div>'+
+    '<div class="hint" id="hint"></div>');
+  setTimeout(function(){ play(z.s); },400);
+}
+// 生活圖卡：看詞+圖，找出本課注音
+function quizWord(z){
+  var opts = pickOpts(z.s, 3);
+  stage('<span class="step">'+(ST.sym+1)+'／4 · 生活圖卡</span>'+
+    '<div class="card-img">'+z.e+'</div><div class="word"><ruby>'+z.w+'<rt>'+z.wz+'</rt></ruby></div>'+
+    '<div class="say">「'+z.w+'」裡面有哪一個注音？</div>'+
+    '<div class="row"><button class="hear" onclick="play(\''+z.s+'\')">🔊 聽 '+z.s+'</button></div>'+
+    '<div class="opts" id="opts">'+opts.map(function(o){ return '<button onclick="pick(this,\''+o+'\',\''+z.s+'\',\'word\')">'+o+'</button>'; }).join('')+'</div>'+
+    '<div class="hint" id="hint"></div>');
+}
+function pickOpts(ans, n){
+  var pool = ZY.map(function(x){ return x.s; }).concat(['ㄉ','ㄊ','ㄋ','ㄍ']);
+  var set = [ans];
+  while (set.length < n){ var c = pool[Math.floor(Math.random()*pool.length)]; if (set.indexOf(c)<0) set.push(c); }
+  for (var i=set.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=set[i];set[i]=set[j];set[j]=t; }
+  return set;
+}
+function pick(el, choice, ans, mode){
+  var hint = document.getElementById('hint');
+  if (choice === ans){ el.classList.add('yes'); hint.textContent='答對了！你好棒！';
+    [].forEach.call(document.querySelectorAll('#opts button'), function(b){ b.onclick=null; });
+    play(ans); setTimeout(next, 1300);
+  } else { el.classList.add('no'); el.onclick=null; hint.textContent='再聽一次，再試試看 😊'; play(ans); }
+}
+
+// 描寫 canvas
+var TC = { d:false };
+function traceInit(){
+  var c = document.getElementById('tc'); if(!c) return; var ctx = c.getContext('2d');
+  ctx.lineWidth=16; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#FF6FA1';
+  function pos(e){ var r=c.getBoundingClientRect(); var t=e.touches?e.touches[0]:e; return {x:(t.clientX-r.left)*c.width/r.width, y:(t.clientY-r.top)*c.height/r.height}; }
+  function down(e){ e.preventDefault(); TC.d=true; var p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+0.1,p.y+0.1); ctx.stroke(); }
+  function move(e){ if(!TC.d)return; e.preventDefault(); var p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }
+  function up(){ TC.d=false; }
+  c.addEventListener('pointerdown',down); c.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+  c.addEventListener('touchstart',down,{passive:false}); c.addEventListener('touchmove',move,{passive:false}); c.addEventListener('touchend',up);
+}
+function traceClear(){ var c=document.getElementById('tc'); if(c){ c.getContext('2d').clearRect(0,0,c.width,c.height); } }
+
+function done(){
+  save();
+  var cells = ZY.map(function(z){ return '<div>'+z.s+'<span class="ok">✓</span></div>'; }).join('');
+  stage('<div class="mascot" style="font-size:72px">🎉</div><div class="say">你好棒！ㄅ ㄆ ㄇ ㄈ 都聽過、描過、也玩過了！</div>'+
+    '<div class="review">'+cells+'</div>'+
+    '<div class="row" style="margin-top:8px"><button class="go" onclick="restart()">再玩一次</button><button class="go g" onclick="goApp()">回大班學習</button></div>');
+  document.getElementById('crumbs').innerHTML = STEPS.map(function(){ return '<i class="ok"></i>'; }).join('');
+}
+
+// 開場：有進度就顯示「繼續上次」
+(function(){ var p = load(); if (p && (p.sym>0 || p.step>0)) document.getElementById('contBtn').style.display=''; })();
+</script>
+</body>
+</html>
