@@ -52,6 +52,12 @@ window.addEventListener('message', function(e){
 });
 document.getElementById('ftGo').addEventListener('click', function(){ setTimeout(function(){ document.getElementById('ft').classList.remove('on'); }, 800); });
 
+// 兒童版要開同資料夾的學習頁（例如 ㄅㄆㄇㄈ 示範課）：Google 內框不能直接換頁，改由外層頁導向
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type === 'nav' && typeof d.to === 'string' && /^[a-z0-9_-]+\.html$/i.test(d.to)) { location.href = './' + d.to; }
+});
+
 
 // 天氣：定位在外層頁做（Google 內框不能定位），查好再傳給兒童版
 var SCHOOL = { lat: 25.0589, lon: 121.4317 }; // 新北市泰山區
