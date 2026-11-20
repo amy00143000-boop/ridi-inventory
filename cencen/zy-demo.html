@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ㄅㄆㄇㄈ 示範課（教育部音檔試聽）</title>
+<style>
+:root{--ink:#3E2238;--acc:#FF8FB1;--accD:#E0607F;--blue:#4A90E2;--bg:#FFF6F9}
+*{box-sizing:border-box}
+body{margin:0;font-family:"PingFang TC","Noto Sans TC",system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:16px 6vw 40px}
+h1{font-size:28px;margin:4px 0 6px;text-align:center}
+.sub{text-align:center;font-size:15px;opacity:.75;margin-bottom:14px}
+.tabs{display:flex;gap:10px;justify-content:center;margin:0 auto 16px;max-width:620px}
+.tabs button{flex:1;font:inherit;font-size:20px;font-weight:900;padding:10px;border-radius:999px;border:3px solid var(--acc);background:#fff;color:var(--ink);cursor:pointer}
+.tabs button.on{background:var(--acc);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:620px;margin:0 auto}
+.card{background:#fff;border:4px solid #FFD3E0;border-radius:26px;padding:14px;text-align:center;box-shadow:0 6px 0 #FFD3E0}
+.sym{font-size:96px;font-weight:900;line-height:1.1;cursor:pointer;user-select:none}
+.word{font-size:20px;margin:4px 0 10px}
+.word .e{font-size:34px;vertical-align:middle}
+.row{display:flex;gap:8px;justify-content:center}
+.row button{font:inherit;font-size:18px;font-weight:800;border:0;border-radius:999px;padding:8px 14px;cursor:pointer;background:var(--blue);color:#fff}
+.row button.slow{background:#8BC34A}
+.card.play{border-color:var(--accD);transform:scale(1.03);transition:.15s}
+.quiz{max-width:620px;margin:0 auto;text-align:center}
+.big{font-size:22px;font-weight:900;margin:8px 0 14px}
+.hear{font:inherit;font-size:24px;font-weight:900;border:0;border-radius:999px;padding:14px 28px;background:var(--acc);color:#fff;cursor:pointer;box-shadow:0 6px 0 var(--accD)}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
+.opts button{font:inherit;font-size:64px;font-weight:900;background:#fff;border:4px solid #FFD3E0;border-radius:22px;padding:6px 0;cursor:pointer;color:var(--ink)}
+.opts button.yes{border-color:#2FB060;background:#E3F7E8}
+.opts button.no{border-color:#ccc;opacity:.4}
+.score{font-size:18px;opacity:.8}
+.test{max-width:620px;margin:22px auto 0;background:#fff;border-radius:18px;padding:12px 16px;font-size:14px;border:2px dashed #ddd}
+.test table{width:100%;border-collapse:collapse}
+.test td,.test th{padding:4px 6px;border-bottom:1px solid #eee;text-align:left}
+.ok{color:#2FB060;font-weight:800}.bad{color:#D33;font-weight:800}
+.credit{max-width:620px;margin:16px auto 0;font-size:13px;line-height:1.7;opacity:.85}
+.credit a{color:var(--blue)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<h1>ㄅㄆㄇㄈ 示範課</h1>
+<div class="sub">點注音或按「再聽一次」，可以一直重聽</div>
+
+<div class="tabs"><button id="tLearn" class="on" onclick="tab('learn')">👂 聽一聽</button><button id="tQuiz" onclick="tab('quiz')">🎯 考考你</button></div>
+
+<div id="learn">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div id="quiz" class="quiz hide">
+  <div class="big">聽聽看，是哪一個注音？</div>
+  <button class="hear" onclick="qPlay()">🔊 聽題目</button>
+  <div class="opts" id="opts"></div>
+  <div class="score" id="score"></div>
+</div>
+
+<div class="test">
+  <b>音檔載入測試（家長看）</b>
+  <table id="tt"><tr><th>注音</th><th>檔案</th><th>狀態</th><th>長度</th></tr></table>
+  <div id="ttNote" style="margin-top:6px"></div>
+</div>
+
+<div class="credit">
+  <b>音檔來源與授權</b><br>
+  2017 © 教育部，國語注音符號手冊-開放部件。<br>
+  此素材依「創用CC 姓名標示 4.0 國際版本」授權條款進行公眾釋出：<a href="https://creativecommons.org/licenses/by/4.0/deed.zh_TW">CC BY 4.0</a>。<br>
+  來源：<a href="https://language.moe.gov.tw/001/Upload/files/SITE_CONTENT/M0001/deploy/index.html">教育部《國語注音符號手冊》數位版</a>（開放部件壓縮檔 bopomofo_materials_20170213.zip，音檔 F1–F4）。<br>
+  本頁直接播放原始音檔，未修改內容；「慢慢聽」只在播放時放慢速度。<br>
+  說明：官方資料未標示錄音者，也未說明是否為真人錄音，本頁不標示為真人聲音。<br>
+  例詞只有文字和圖，沒有例詞音檔。
+</div>
+
+<script>
+var BASE = 'https://language.moe.gov.tw/001/Upload/files/SITE_CONTENT/M0001/deploy/html_ch/audio/';
+var ZY = [
+  { s: 'ㄅ', f: 'F1.WAV', w: '爸爸', e: '👨' },
+  { s: 'ㄆ', f: 'F2.WAV', w: '葡萄', e: '🍇' },
+  { s: 'ㄇ', f: 'F3.WAV', w: '貓咪', e: '🐱' },
+  { s: 'ㄈ', f: 'F4.WAV', w: '飛機', e: '✈️' }
+];
+var AU = ZY.map(function(z){ var a = new Audio(BASE + z.f); a.preload = 'auto'; return a; });
+var cur = null;
+function play(i, slow){
+  try { if (cur) { cur.pause(); cur.currentTime = 0; } } catch(e) {}
+  var a = AU[i]; cur = a;
+  try { a.preservesPitch = true; a.webkitPreservesPitch = true; } catch(e) {}
+  a.playbackRate = slow ? 0.75 : 1;
+  a.currentTime = 0;
+  var c = document.getElementById('c' + i);
+  if (c) { c.classList.add('play'); setTimeout(function(){ c.classList.remove('play'); }, 700); }
+  var p = a.play(); if (p && p.catch) p.catch(function(err){ note('播放失敗：' + err.message); });
+}
+function note(t){ document.getElementById('ttNote').textContent = t; }
+document.getElementById('grid').innerHTML = ZY.map(function(z, i){
+  return '<div class="card" id="c' + i + '"><div class="sym" onclick="play(' + i + ')">' + z.s + '</div>' +
+    '<div class="word"><span class="e">' + z.e + '</span> ' + z.w + '</div>' +
+    '<div class="row"><button onclick="play(' + i + ')">🔊 再聽一次</button><button class="slow" onclick="play(' + i + ', true)">🐢 慢慢聽</button></div></div>';
+}).join('');
+// 考考你
+var Q = { ans: 0, n: 0, ok: 0, lock: false };
+function shuffle(a){ for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function qNew(){
+  Q.ans = Math.floor(Math.random() * 4); Q.lock = false;
+  document.getElementById('opts').innerHTML = shuffle([0, 1, 2, 3]).map(function(i){ return '<button onclick="qPick(' + i + ', this)">' + ZY[i].s + '</button>'; }).join('');
+  document.getElementById('score').textContent = '第 ' + (Q.n + 1) + ' 題，答對 ' + Q.ok + ' 題';
+}
+function qPlay(){ play(Q.ans); }
+function qPick(i, el){
+  if (Q.lock) return;
+  if (i === Q.ans) { Q.lock = true; el.classList.add('yes'); Q.ok++; Q.n++; play(i); setTimeout(function(){ if (Q.n >= 8) { document.getElementById('score').textContent = '完成了！8 題答對 ' + Q.ok + ' 題 🎉'; document.getElementById('opts').innerHTML = '<button style="font-size:22px;grid-column:1/-1" onclick="Q.n=0;Q.ok=0;qNew();qPlay()">再玩一次</button>'; } else { qNew(); qPlay(); } }, 1200); }
+  else { el.classList.add('no'); el.onclick = null; }
+}
+function tab(t){
+  document.getElementById('learn').classList.toggle('hide', t !== 'learn');
+  document.getElementById('quiz').classList.toggle('hide', t !== 'quiz');
+  document.getElementById('tLearn').classList.toggle('on', t === 'learn');
+  document.getElementById('tQuiz').classList.toggle('on', t === 'quiz');
+  if (t === 'quiz') { Q.n = 0; Q.ok = 0; qNew(); }
+}
+// 載入測試
+var tt = document.getElementById('tt');
+ZY.forEach(function(z, i){
+  var tr = document.createElement('tr'); tr.innerHTML = '<td>' + z.s + '</td><td>' + z.f + '</td><td id="st' + i + '">載入中…</td><td id="du' + i + '">-</td>'; tt.appendChild(tr);
+  var a = AU[i];
+  a.addEventListener('loadedmetadata', function(){ document.getElementById('du' + i).textContent = a.duration.toFixed(2) + ' 秒'; });
+  a.addEventListener('canplaythrough', function(){ var s = document.getElementById('st' + i); s.textContent = '✓ 可播放'; s.className = 'ok'; }, { once: true });
+  a.addEventListener('error', function(){ var s = document.getElementById('st' + i); s.textContent = '✗ 載入失敗'; s.className = 'bad'; });
+  a.load();
+});
+</script>
+</body>
+</html>
